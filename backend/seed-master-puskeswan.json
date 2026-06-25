@@ -1,0 +1,3958 @@
+{
+ "penyakit": [
+  {
+   "kategori": "GANGREP",
+   "kode": "ADOV",
+   "nama": "Adhesi Ovari",
+   "alternatif": "Adhesi Ovari"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "AGL",
+   "nama": "Agalaksia",
+   "alternatif": "Agalactia"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "AGV",
+   "nama": "Agenesis Ovaria",
+   "alternatif": "Ovarian Agenesi"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "APO",
+   "nama": "Aplasia Ovaria",
+   "alternatif": "Aplasia Ovaria"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "ATV",
+   "nama": "Atrofi Ovarium",
+   "alternatif": "Atrophy Ovary"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "ATC",
+   "nama": "Atrofi serviks",
+   "alternatif": "Atrophy cervix"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "BLN",
+   "nama": "Balanopostitis",
+   "alternatif": "Balanoposthitis"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "BGC",
+   "nama": "Bovine genital campylobacteriosis",
+   "alternatif": "Bovine genital campylobacteriosis"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "BTG",
+   "nama": "Bunting",
+   "alternatif": "Pregnant"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "CVC",
+   "nama": "Cervicitis",
+   "alternatif": "Cervicitis"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "CA",
+   "nama": "Contagious agalactia",
+   "alternatif": "Contagious agalactia"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "CEM",
+   "nama": "Contagious equine metritis",
+   "alternatif": "Contagious equine metritis"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "CLP",
+   "nama": "Corpus Luteum Persisten",
+   "alternatif": "Corpus Luteum Persisten"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "CRY",
+   "nama": "Cryptorchidismus",
+   "alternatif": "Cryptorchidismus"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "CEH",
+   "nama": "Cystic Endometrial Hyperplasia",
+   "alternatif": "Cystic Endometrial Hyperplasia"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "DPB",
+   "nama": "Delayed Pubertas",
+   "alternatif": "Delayed Pubertas"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "DTK",
+   "nama": "Distokia",
+   "alternatif": "Dystocia"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "DOUR",
+   "nama": "Dourine",
+   "alternatif": "Dourine"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "EDM",
+   "nama": "Endometritis",
+   "alternatif": "Endometritis"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "ECE",
+   "nama": "Equine Coital Exanthema",
+   "alternatif": "Equine Coital Exanthema"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "ETK",
+   "nama": "Eutokia",
+   "alternatif": "Eutokia"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "FCU",
+   "nama": "Fibrosis cervix et uteri",
+   "alternatif": "Fibrosis cervix et uteri"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "FMT",
+   "nama": "Freemartin",
+   "alternatif": "Freemartin"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "GL",
+   "nama": "Galaksia",
+   "alternatif": "Galactia"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "HDK",
+   "nama": "Hidrokel",
+   "alternatif": "Hidrokel"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "HPO",
+   "nama": "Hipofungsi ovari",
+   "alternatif": "Ovarium hypofunction"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "HPB",
+   "nama": "Hipoplasia Bilateral",
+   "alternatif": "Hipoplasia Bilateral"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "HPL",
+   "nama": "Hipoplasia ovari",
+   "alternatif": "Hypoplasia ovarium"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "IPV",
+   "nama": "Infectious Popular Vulvovaginitis",
+   "alternatif": "Infectious Popular Vulvovaginitis"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "IVT",
+   "nama": "Involusi Tertunda",
+   "alternatif": "Involusi Tertunda"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "KWB",
+   "nama": "kawin berulang",
+   "alternatif": "repeat breeding"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "KGG",
+   "nama": "Keguguran",
+   "alternatif": "Abortus"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "KCV",
+   "nama": "Kelainan Cerviks",
+   "alternatif": "Kelainan Cerviks"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "LP",
+   "nama": "Lahir Prematur",
+   "alternatif": "Lahir Prematur"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "MGC",
+   "nama": "mamary gland carcinoma",
+   "alternatif": "mamary gland carcinoma"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "MSR",
+   "nama": "Maserasi",
+   "alternatif": "Maceration"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "MTT",
+   "nama": "Metritis",
+   "alternatif": "Metritis"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "MON",
+   "nama": "Monorchidismus",
+   "alternatif": "Monorchidismus"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "MM",
+   "nama": "Mumifikasi",
+   "alternatif": "Mummification"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "NIM",
+   "nama": "Nimpomania",
+   "alternatif": "Nymphomania"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "OGL",
+   "nama": "Oligogalaksia",
+   "alternatif": "Oligogalactia"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "OPR",
+   "nama": "Oophoritis",
+   "alternatif": "Oophoritis"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "ORC",
+   "nama": "Orchitis",
+   "alternatif": "Orchitis"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "ORAG",
+   "nama": "Organ Reproduksi Abnormal Genetik",
+   "alternatif": "Organ Reproduksi Abnormal Genetik"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "ORTL",
+   "nama": "Organ Reproduksi Tidak Lengkap",
+   "alternatif": "Organ Reproduksi Tidak Lengkap"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "PEK",
+   "nama": "Paralisa Eksterna Kaudal",
+   "alternatif": "Paralisa Eksterna Kaudal"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "PRPM",
+   "nama": "Paraphimosis",
+   "alternatif": "Paraphimosis"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "PBU",
+   "nama": "Penebalan Uteri",
+   "alternatif": "Penebalan Uteri"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "PHM",
+   "nama": "Phimosis",
+   "alternatif": "Phimosis"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "PLU",
+   "nama": "Prolap uteri",
+   "alternatif": "Uterine prolapse"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "PLV",
+   "nama": "Prolap vagina",
+   "alternatif": "Vaginal prolapse"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "PYO",
+   "nama": "Pyometra",
+   "alternatif": "Pyometra"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "RS",
+   "nama": "Retensio Secundinarum",
+   "alternatif": "Retained foetal membranes"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "SHT",
+   "nama": "Silent Heat",
+   "alternatif": "Silent Heat"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "SCL",
+   "nama": "Sista Corpora Luteal",
+   "alternatif": "Sista Corpora Luteal"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "SFL",
+   "nama": "Sistik Folikuler",
+   "alternatif": "Cyste Folikuler"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "STL",
+   "nama": "Sistik Luteal",
+   "alternatif": "Cyste Luteal"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "CSO",
+   "nama": "Sistik ovari",
+   "alternatif": "Cystic ovary"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "STB",
+   "nama": "Stillbirth",
+   "alternatif": "Stillbirth"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "SBE",
+   "nama": "Subestrus",
+   "alternatif": "Subestrus"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "TRU",
+   "nama": "Torsio Uteri",
+   "alternatif": "Uterine torsion"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "TVT",
+   "nama": "Transmissible Venereal Tumor",
+   "alternatif": "Transmissible Venereal Tumor"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "TOR",
+   "nama": "Tumor Organ Reproduksi",
+   "alternatif": "Tumor Organ Reproduksi"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "VG",
+   "nama": "Vaginitis",
+   "alternatif": "Vaginitis"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "VSC",
+   "nama": "venereal sarcoma",
+   "alternatif": "venereal sarcoma"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "VV",
+   "nama": "Vulvitis",
+   "alternatif": "Vulvitis"
+  },
+  {
+   "kategori": "GANGREP",
+   "kode": "WHD",
+   "nama": "White Heifer Disease",
+   "alternatif": "White Heifer Disease"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "AHS",
+   "nama": "African horse sickness",
+   "alternatif": "African horse sickness"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "ASF",
+   "nama": "African swine fever",
+   "alternatif": "African swine fever"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "AKA",
+   "nama": "Akabane",
+   "alternatif": "Akabane"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "AD",
+   "nama": "Aujeszky's disease",
+   "alternatif": "Aujeszky's disease"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "AE",
+   "nama": "Avian encephalomyelitis",
+   "alternatif": "Avian encephalomyelitis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "HPAI",
+   "nama": "Avian Influenza - HPAI",
+   "alternatif": "Avian Influenza (Highly pathogenic)"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "LPAI",
+   "nama": "Avian Influenza - LPAI",
+   "alternatif": "Avian Influenza (Low pathogenic)"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "BLT",
+   "nama": "Bluetongue",
+   "alternatif": "Bluetongue"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "BD",
+   "nama": "Border Disease",
+   "alternatif": "Border Disease"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "BEF",
+   "nama": "Bovine Ephemeral Fever",
+   "alternatif": "Bovine Ephemeral Fever"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "BL",
+   "nama": "Bovine leukosis",
+   "alternatif": "Bovine leukosis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "BSE",
+   "nama": "Bovine spongiform encephalopathy",
+   "alternatif": "Bovine spongiform encephalopathy"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "BVD",
+   "nama": "Bovine Viral Diarrhea",
+   "alternatif": "Bovine Viral Diarrhea"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "BC",
+   "nama": "Bronchitis",
+   "alternatif": "Bronchitis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "SP",
+   "nama": "cacar babi",
+   "alternatif": "Swine Pox"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "CITB",
+   "nama": "Canine Infectious Tracheobronchitis",
+   "alternatif": "Canine Infectious Tracheobronchitis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "CAE",
+   "nama": "Caprine arthritis/encephalitis",
+   "alternatif": "Caprine arthritis/encephalitis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "CSF",
+   "nama": "Classical swine fever",
+   "alternatif": "Classical swine fever"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "CCHF",
+   "nama": "Crimean Congo haemorrhagic fever",
+   "alternatif": "Crimean Congo haemorrhagic fever"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "CTM",
+   "nama": "Cystomatosis",
+   "alternatif": "Cystomatosis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "DIST",
+   "nama": "distemper",
+   "alternatif": "Distemper"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "STRA",
+   "nama": "Distemper Kuda",
+   "alternatif": "Strangles"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "DVE",
+   "nama": "Duck virus enteritis",
+   "alternatif": "Duck virus enteritis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "DVH",
+   "nama": "Duck Virus Hepatitis",
+   "alternatif": "Duck Virus Hepatitis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "EBO",
+   "nama": "Ebola",
+   "alternatif": "Ebola"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "EDS",
+   "nama": "Egg Drop Sindrome",
+   "alternatif": "Egg Drop Sindrome"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "WEEM",
+   "nama": "Encephalomyelitis (Western)",
+   "alternatif": "Encephalomyelitis (Western)"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "EEHV",
+   "nama": "Endothelial Elephant Herpes Virus",
+   "alternatif": "Endhotelial Elephant Herpes Virus"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "EEM",
+   "nama": "Enterovirus encephalomyelitis",
+   "alternatif": "Enterovirus encephalomyelitis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "EBL",
+   "nama": "Enzootic Bovine Leukosis",
+   "alternatif": "Enzootic Bovine Leukosis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "EEEM",
+   "nama": "Equine encephalomyelitis (Eastern)",
+   "alternatif": "Equine encephalomyelitis (Eastern)"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "EI",
+   "nama": "Equine influenza",
+   "alternatif": "Equine influenza"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "ERP",
+   "nama": "Equine rhinopneumonitis",
+   "alternatif": "Equine rhinopneumonitis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "EVA",
+   "nama": "Equine viral arteritis",
+   "alternatif": "Equine viral arteritis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "FCV",
+   "nama": "Feline calicivirus",
+   "alternatif": "Feline calicivirus"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "FIV",
+   "nama": "Feline Immunodeficiency Virus",
+   "alternatif": "Feline Immunodeficiency Virus"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "FIP",
+   "nama": "Feline infectious peritonitis",
+   "alternatif": "Feline infectious peritonitis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "FLV",
+   "nama": "Feline Leukemia Virus",
+   "alternatif": "Feline Leukemia Virus"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "FOH",
+   "nama": "Feline Ocular Herpes",
+   "alternatif": "Feline Ocular Herpes"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "FVR",
+   "nama": "Feline Viral Rhinotracheitis",
+   "alternatif": "Feline Viral Rhinotracheitis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "SIN",
+   "nama": "flu babi",
+   "alternatif": "Swine Influenza Novel (H1N1)"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "FP",
+   "nama": "Fowl pox",
+   "alternatif": "Fowl pox"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "IBD",
+   "nama": "Gumboro",
+   "alternatif": "Infectious Bursal Disease"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "HV",
+   "nama": "Hendra Virus",
+   "alternatif": "Hendra Virus"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "HP",
+   "nama": "Horse pox",
+   "alternatif": "Horse pox"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "IBR",
+   "nama": "Infectious Bovine Rhinotracheitis",
+   "alternatif": "Infectious Bovine Rhinotracheitis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "IB",
+   "nama": "Infectious Bronchitis",
+   "alternatif": "Avian infectious bronchitis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "ILT",
+   "nama": "Infectious laryngtracheitis",
+   "alternatif": "Avian infectious laryngotracheitis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "ISS",
+   "nama": "Infectious Stunting Syndrome",
+   "alternatif": "Infectious Stunting Syndrome"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "JE",
+   "nama": "Japanese Encephalitis",
+   "alternatif": "Japanese encephalitis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "LSD",
+   "nama": "Lumpy skin disease",
+   "alternatif": "Lumpy skin disease"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "LL",
+   "nama": "Lymphoid Leukosis",
+   "alternatif": "Lymphoid Leukosis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "MV",
+   "nama": "Maedi-visna",
+   "alternatif": "Maedi-visna"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "MCF",
+   "nama": "Malignant Catarrhal Fever",
+   "alternatif": "Malignant Catarrhal Fever"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "MD",
+   "nama": "marek",
+   "alternatif": "Marek's disease"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "MYX",
+   "nama": "Myxomatosis",
+   "alternatif": "Myxomatosis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "ND",
+   "nama": "Newcastle Disease",
+   "alternatif": "Newcastle Disease"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "NVE",
+   "nama": "nipah",
+   "alternatif": "Nipah virus encephalitis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "ORF",
+   "nama": "Orf",
+   "alternatif": "Orf"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "PLK",
+   "nama": "Panleukopenia",
+   "alternatif": "Panleukopenia"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "PAP",
+   "nama": "Papilloma",
+   "alternatif": "Papilloma"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "PARV",
+   "nama": "Parvovirus",
+   "alternatif": "Parvovirus"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "JD",
+   "nama": "Penyakit Jembrana",
+   "alternatif": "Jembrana Disease"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "PMK",
+   "nama": "Penyakit Mulut dan Kuku",
+   "alternatif": "Foot and mouth disease"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "PPR",
+   "nama": "Peste des petits ruminants",
+   "alternatif": "Peste des petits ruminants"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "RHD",
+   "nama": "Rabbit haemorrhagic disease",
+   "alternatif": "Rabbit haemorrhagic disease"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "RA",
+   "nama": "Rabies",
+   "alternatif": "Rabies"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "RVF",
+   "nama": "Rift Valley fever",
+   "alternatif": "Rift Valley fever"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "RP",
+   "nama": "Rinderpest",
+   "alternatif": "Rinderpest"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "SCR",
+   "nama": "Scrapie",
+   "alternatif": "Scrapie"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "POX",
+   "nama": "Sheep pox and goat pox",
+   "alternatif": "Sheep pox and goat pox"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "SVD",
+   "nama": "Swine vesicular disease",
+   "alternatif": "Swine vesicular disease"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "SHS",
+   "nama": "Swollen Head Syndrome",
+   "alternatif": "Swollen Head Syndrome"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "TR",
+   "nama": "Turkey rhinotracheitis",
+   "alternatif": "Turkey rhinotracheitis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "VEEM",
+   "nama": "Venezuelan equine encephalomyelitis",
+   "alternatif": "Venezuelan equine encephalomyelitis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "VS",
+   "nama": "Vesicular stomatitis",
+   "alternatif": "Vesicular stomatitis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "VA",
+   "nama": "Viral Arthritis",
+   "alternatif": "Viral Arthritis"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "VHD",
+   "nama": "Viral Haemorrhagic Disease",
+   "alternatif": "Viral Haemorrhagic Disease"
+  },
+  {
+   "kategori": "VIRAL",
+   "kode": "WNF",
+   "nama": "West Nile Fever",
+   "alternatif": "West Nile Fever"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "ACB",
+   "nama": "Actinobacillosis",
+   "alternatif": "Actinobacillosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "ATM",
+   "nama": "Actinomycosis",
+   "alternatif": "Actinomycosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "AFB",
+   "nama": "American Foulbrood",
+   "alternatif": "American Foulbrood"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "AN",
+   "nama": "Anaplasmosis",
+   "alternatif": "Anaplasmosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "AT",
+   "nama": "Anthraks",
+   "alternatif": "Anthrax"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "ART",
+   "nama": "Artritis",
+   "alternatif": "Arthritis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "ASPC",
+   "nama": "Avian Spirochaetosis",
+   "alternatif": "Avian Spirochaetosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "WSD",
+   "nama": "Berak Putih",
+   "alternatif": "White Scours Disease"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "BLG",
+   "nama": "Blackleg",
+   "alternatif": "Blackleg"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "BLP",
+   "nama": "Blepharitis",
+   "alternatif": "Blepharitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "BTL",
+   "nama": "Botulism",
+   "alternatif": "Botulism"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "BVTB",
+   "nama": "Bovine Tuberculosis",
+   "alternatif": "Bovine Tuberculosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "BR",
+   "nama": "Brucellosis",
+   "alternatif": "Brucellosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "CAM",
+   "nama": "Campylobacteriosis",
+   "alternatif": "Campylobacteriosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "CL",
+   "nama": "Caseous lymphadenitis",
+   "alternatif": "Caseous lymphadenitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "CHL",
+   "nama": "Chlamydiosis",
+   "alternatif": "Chlamydiosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "CHOL",
+   "nama": "Cholesistitis",
+   "alternatif": "Cholesistitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "COL",
+   "nama": "Colibacillosis",
+   "alternatif": "Colibacillosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "CLT",
+   "nama": "Colitis",
+   "alternatif": "Colitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "CBPP",
+   "nama": "Contagious bovine pleuropneumonia",
+   "alternatif": "Contagious bovine pleuropneumonia"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "CCPP",
+   "nama": "Contagious caprine pleuropneumonia",
+   "alternatif": "Contagious caprine pleuropneumonia"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "CNB",
+   "nama": "Corynebacteriosis",
+   "alternatif": "Corynebacteriosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "COR",
+   "nama": "Coryza",
+   "alternatif": "Infectious Coryza"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "CRD",
+   "nama": "CRD",
+   "alternatif": "Chronic Respiratory Disease"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "CTS",
+   "nama": "Cystitis",
+   "alternatif": "Cystitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "DRM",
+   "nama": "Dermatitis",
+   "alternatif": "Dermatitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "DERM",
+   "nama": "Dermatophilosis",
+   "alternatif": "Dermatophilosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "ELC",
+   "nama": "Ehrlichiosis",
+   "alternatif": "Ehrlichiosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "ENT",
+   "nama": "Enteritis",
+   "alternatif": "Enteritis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "ETX",
+   "nama": "Enterotoxaemia",
+   "alternatif": "Enterotoxaemia"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "EPR",
+   "nama": "Eperythrozoonosis",
+   "alternatif": "Eperythrozoonosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "ERY",
+   "nama": "Erysipelas",
+   "alternatif": "Erysipelas"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "EFB",
+   "nama": "EUROPEAN FOULBROOD",
+   "alternatif": "EUROPEAN FOULBROOD"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "FCG",
+   "nama": "Feline Chronic Gingivostomatitis",
+   "alternatif": "Feline Chronic Gingivostomatitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "FR",
+   "nama": "Footroot",
+   "alternatif": "Footroot"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "FC",
+   "nama": "Fowl Cholera",
+   "alternatif": "Fowl cholera"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "FT",
+   "nama": "Fowl typhoid",
+   "alternatif": "Fowl typhoid"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "GST",
+   "nama": "Gastritis",
+   "alternatif": "Gastritis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "GAST",
+   "nama": "Gastroenteritis",
+   "alternatif": "Gastroenteritis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "GF",
+   "nama": "Ginggivitis",
+   "alternatif": "Ginggivitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "GLA",
+   "nama": "Glanders",
+   "alternatif": "Glanders"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "HMB",
+   "nama": "Haemobartonellosis",
+   "alternatif": "Haemobartonellosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "HW",
+   "nama": "Heartwater",
+   "alternatif": "Heartwater"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "HPT",
+   "nama": "Hepatitis",
+   "alternatif": "Hepatitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "ISPA",
+   "nama": "Infeksi saluran pernapasan atas",
+   "alternatif": "upper respiratory tract infections"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "KLS",
+   "nama": "Klebsiellosis",
+   "alternatif": "Klebsiellosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "CJT",
+   "nama": "Konjunctivitis",
+   "alternatif": "Conjunctivitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "LMS",
+   "nama": "Laminitis",
+   "alternatif": "Laminitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "LEP",
+   "nama": "Leptospirosis",
+   "alternatif": "Leptospirosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "LFD",
+   "nama": "Limfadenitis",
+   "alternatif": "Limfadenitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "LIST",
+   "nama": "Listeriosis",
+   "alternatif": "Listeriosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "MAS",
+   "nama": "Mastitis",
+   "alternatif": "Mastitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "MEI",
+   "nama": "Meiliodosis",
+   "alternatif": "Meiliodosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "MYC",
+   "nama": "Mycoplasmosis",
+   "alternatif": "Mycoplasmosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "MST",
+   "nama": "Myositis",
+   "alternatif": "Myositis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "OMP",
+   "nama": "Omphalitis",
+   "alternatif": "Omphalitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "OE",
+   "nama": "Otitis Eksterna",
+   "alternatif": "Otitis Externa"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "OI",
+   "nama": "Otitis Interna",
+   "alternatif": "Otitis Interna"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "OM",
+   "nama": "Otitis Media",
+   "alternatif": "Otitis Media"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "PAN",
+   "nama": "Pankreatitis",
+   "alternatif": "Pankreatitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "PTB",
+   "nama": "Paratuberculosis",
+   "alternatif": "Johne's Disease / Paratubercullosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "PST",
+   "nama": "Pasteurellosis",
+   "alternatif": "Pasteurellosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "PDT",
+   "nama": "Periodontitis",
+   "alternatif": "Periodontitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "PNEU",
+   "nama": "Pneumonia",
+   "alternatif": "Pneumonia"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "PDMT",
+   "nama": "Pododermatitis",
+   "alternatif": "Pododermatitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "PUL",
+   "nama": "Pullorum",
+   "alternatif": "Pullorum"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "PK",
+   "nama": "Pulpy Kidney",
+   "alternatif": "Pulpy Kidney"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "PYD",
+   "nama": "Pyoderma",
+   "alternatif": "Pyoderma"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "QF",
+   "nama": "Q fever",
+   "alternatif": "Q fever"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "BLA",
+   "nama": "radang paha",
+   "alternatif": "Black Leg"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "RNT",
+   "nama": "Rhinitis",
+   "alternatif": "Rhinitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "RKT",
+   "nama": "Rickettsiosis",
+   "alternatif": "Rickettsiosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "SAL",
+   "nama": "Salmonellosis",
+   "alternatif": "Salmonellosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "SE",
+   "nama": "Septichaemia Epizootica",
+   "alternatif": "Septichaemia Epizootica"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "SPL",
+   "nama": "Splenitis",
+   "alternatif": "Splenitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "STAPH",
+   "nama": "Staphylococcosis",
+   "alternatif": "Staphylococcosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "STS",
+   "nama": "Stomatitis",
+   "alternatif": "Stomatitis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "STREP",
+   "nama": "Streptococcosis",
+   "alternatif": "Streptococcosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "SES",
+   "nama": "Swine Erysipelas",
+   "alternatif": "Swine Erysipelas"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "TET",
+   "nama": "Tetanus",
+   "alternatif": "Tetanus"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "TGE",
+   "nama": "Transmissible gastro enteritis",
+   "alternatif": "Transmissible gastro enteritis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "TB",
+   "nama": "Tuberkulosis",
+   "alternatif": "Tuberculosis"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "TUL",
+   "nama": "Tularemia",
+   "alternatif": "Tularemia"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "kode": "TZD",
+   "nama": "Tyzzer Disease",
+   "alternatif": "Tyzzer Disease"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "ANC",
+   "nama": "Ancylostomiasis",
+   "alternatif": "Ancylostomiasis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "ASC",
+   "nama": "Ascariasis/Toxocariasis",
+   "alternatif": "Ascariasis/Toxocariasis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "ASCD",
+   "nama": "Ascaridiasis",
+   "alternatif": "Ascaridiasis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "BNS",
+   "nama": "bunostomiasis",
+   "alternatif": "bunostomiasis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "CAC",
+   "nama": "Cacingan",
+   "alternatif": "Helminthiasis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "CST",
+   "nama": "Cestodiasis",
+   "alternatif": "Cestodiasis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "CULM",
+   "nama": "Cutaneous larva migran",
+   "alternatif": "Cutaneous larva migran"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "CYST",
+   "nama": "Cysticercosis",
+   "alternatif": "Cysticercosis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "DCC",
+   "nama": "Dicrocoeliasis",
+   "alternatif": "Dicrocoeliasis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "DRF",
+   "nama": "Dirofilariasis",
+   "alternatif": "Dirofilariasis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "DST",
+   "nama": "Distomatosis",
+   "alternatif": "Distomatosis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "HYD",
+   "nama": "Echinococcosis/hydatidosis",
+   "alternatif": "Echinococcosis/hydatidosis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "FAS",
+   "nama": "Fasciolosis",
+   "alternatif": "Fasciolosis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "FIL",
+   "nama": "Filariasis",
+   "alternatif": "Filariasis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "GSP",
+   "nama": "Gastrophilosis",
+   "alternatif": "Gastrophilosis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "GNS",
+   "nama": "Gnasthostomosis",
+   "alternatif": "Gnasthostomosis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "HBN",
+   "nama": "Habronemiasis",
+   "alternatif": "Habronemiasis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "HMC",
+   "nama": "Haemonchosis",
+   "alternatif": "Haemonchosis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "MCFA",
+   "nama": "Microfilariasis",
+   "alternatif": "Microfilariasis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "MNZ",
+   "nama": "Monieziasis",
+   "alternatif": "Monieziasis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "NMO",
+   "nama": "Nematodiasis",
+   "alternatif": "Nematodiasis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "OXY",
+   "nama": "Oxysprirura mansoni",
+   "alternatif": "Oxysprirura mansoni"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "PPT",
+   "nama": "Paramphistomiasis",
+   "alternatif": "Paramphistomiasis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "SCH",
+   "nama": "Schistosomiasis",
+   "alternatif": "Schistosomiasis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "THZ",
+   "nama": "Thelaziasis",
+   "alternatif": "Thelaziasis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "TRM",
+   "nama": "Trematodiasis",
+   "alternatif": "Trematodiasis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "TRIC",
+   "nama": "Trichinellosis",
+   "alternatif": "Trichinellosis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "TRG",
+   "nama": "Trichostrongylosis",
+   "alternatif": "Trichostrongylosis"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "kode": "TRC",
+   "nama": "Trichuriasis",
+   "alternatif": "Trichuriasis"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "ACR",
+   "nama": "Acariasis",
+   "alternatif": "Acariasis"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "ASP",
+   "nama": "Aspergillosis",
+   "alternatif": "Aspergillosis"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "DEM",
+   "nama": "demodex",
+   "alternatif": "Demodecosis"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "DMT",
+   "nama": "Dermatophitosis",
+   "alternatif": "Dermatophytosis"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "EL",
+   "nama": "Epizootic lymphangitis",
+   "alternatif": "Epizootic lymphangitis"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "SEL",
+   "nama": "histoplasmosis kuda",
+   "alternatif": "Selakarang"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "HM",
+   "nama": "Horse mange",
+   "alternatif": "Horse mange"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "IFK",
+   "nama": "Infestasi Kutu",
+   "alternatif": "Infestasi Kutu"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "IFLL",
+   "nama": "Infestasi Larva Lalat",
+   "alternatif": "Infestasi Larva Lalat"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "STE",
+   "nama": "kaskado",
+   "alternatif": "Cascado"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "MDT",
+   "nama": "Malassezia Dermatitis",
+   "alternatif": "Malassezia Dermatitis"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "MYS",
+   "nama": "miasis",
+   "alternatif": "Myiasis"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "MKS",
+   "nama": "Mikosis",
+   "alternatif": "Mikosis"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "NWS",
+   "nama": "New world screwworm (C. hominivorax)",
+   "alternatif": "New world screwworm (C. hominivorax)"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "OWS",
+   "nama": "Old world screwworm (C. bezziana)",
+   "alternatif": "Old world screwworm (C. bezziana)"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "PDL",
+   "nama": "Pediculosis",
+   "alternatif": "Pediculosis"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "PHT",
+   "nama": "Phthiriasis",
+   "alternatif": "Phthiriasis"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "PCM",
+   "nama": "Phycomycosis",
+   "alternatif": "Phycomycosis"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "PMT",
+   "nama": "Pseudomycetoma",
+   "alternatif": "Pseudomycetoma"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "RW",
+   "nama": "Ring Worm",
+   "alternatif": "Ring Worm"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "SC",
+   "nama": "Scabies",
+   "alternatif": "Scabies"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "kode": "TPR",
+   "nama": "Trichosphorosis",
+   "alternatif": "Trichosphorosis"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "kode": "BB",
+   "nama": "Babesiosis",
+   "alternatif": "Babesiosis"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "kode": "BT",
+   "nama": "Balantidiasis",
+   "alternatif": "Balantidiasis"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "kode": "BZ",
+   "nama": "Baliziekte",
+   "alternatif": "Baliziekte"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "kode": "COC",
+   "nama": "Coccidiosis",
+   "alternatif": "Coccidiosis"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "kode": "CRP",
+   "nama": "Cryptosporidiosis",
+   "alternatif": "Cryptosporidiosis"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "kode": "EPS",
+   "nama": "Equine Piroplasmosis",
+   "alternatif": "Equine Piroplasmosis"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "kode": "GRD",
+   "nama": "Giardiasis",
+   "alternatif": "Giardiasis"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "kode": "HST",
+   "nama": "Histomoniasis",
+   "alternatif": "Histomonosis"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "kode": "LM",
+   "nama": "Leishmaniosis",
+   "alternatif": "Leishmaniosis"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "kode": "LEU",
+   "nama": "Leucocytozoonosis",
+   "alternatif": "Leucocytozoonosis"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "kode": "PLAS",
+   "nama": "Malaria Ayam",
+   "alternatif": "Avian Malaria"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "kode": "MSD",
+   "nama": "Microsporidiasis",
+   "alternatif": "Microsporidiasis"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "kode": "NSP",
+   "nama": "Neosporosis",
+   "alternatif": "Neosporosis"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "kode": "PI",
+   "nama": "Piroplasmosis",
+   "alternatif": "Piroplasmosis"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "kode": "SCP",
+   "nama": "Sarcosporidiosis",
+   "alternatif": "Sarcosporidiosis"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "kode": "SU",
+   "nama": "Surra",
+   "alternatif": "Surra"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "kode": "THEI",
+   "nama": "Theileriosis",
+   "alternatif": "Theileriosis"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "kode": "TOXO",
+   "nama": "Toxoplasmosis",
+   "alternatif": "Toxoplasmosis"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "kode": "TRIM",
+   "nama": "Trichomonosis",
+   "alternatif": "Trichomonosis"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "AB",
+   "nama": "Abses",
+   "alternatif": "Abses"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "AKD",
+   "nama": "Acute Kidney Disease",
+   "alternatif": "Acute Kidney Disease"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "ASD",
+   "nama": "Anal Sac Disease",
+   "alternatif": "Anal Sac Disease"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "AHD",
+   "nama": "Anhidrosis",
+   "alternatif": "Anhidrosis"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "ACD",
+   "nama": "Asidosis",
+   "alternatif": "Acidosis"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "ATR",
+   "nama": "Atoni Rumen",
+   "alternatif": "Atony Rumen"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "ATD",
+   "nama": "Atopic dermatitis",
+   "alternatif": "Atopic dermatitis"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "ATA",
+   "nama": "Atresia ani",
+   "alternatif": "Atresia ani"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "AR",
+   "nama": "Atrophic rhinitis of swine",
+   "alternatif": "Atrophic rhinitis of swine"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "AVIT",
+   "nama": "avitaminosis",
+   "alternatif": "avitaminosis"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "BG",
+   "nama": "Bilobus Gallbladder",
+   "alternatif": "Bilobus Gallbladder"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "CW",
+   "nama": "Cacat bawaan",
+   "alternatif": "Cacat bawaan"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "CXA",
+   "nama": "Cachexia",
+   "alternatif": "Cachexia"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "CAT",
+   "nama": "Cataract",
+   "alternatif": "Cataract"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "CE",
+   "nama": "Cherry Eye",
+   "alternatif": "Cherry Eye"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "CLM",
+   "nama": "Chlamidiasis",
+   "alternatif": "Chlamidiasis"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "CHO",
+   "nama": "Choledocolithiasis",
+   "alternatif": "Choledocolithiasis"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "CKD",
+   "nama": "Chronic Kidney Disease",
+   "alternatif": "Chronic Kidney Disease"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "CHF",
+   "nama": "Congestive Hearth Failure",
+   "alternatif": "Congestive Hearth Failure"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "CU",
+   "nama": "Cornea ulcer",
+   "alternatif": "Cornea ulcer"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "CAL",
+   "nama": "Corpus Alienum",
+   "alternatif": "Corpus Alienum"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "DKB",
+   "nama": "Dekubitus",
+   "alternatif": "Dekubitus"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "DM",
+   "nama": "Diabetes mellitus",
+   "alternatif": "Diabetes mellitus"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "DPL",
+   "nama": "Displasia Abomasum",
+   "alternatif": "Displasia Abomasum"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "EB",
+   "nama": "Egg Binding",
+   "alternatif": "Egg Binding"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "EGC",
+   "nama": "Eosinofilic Granuloma Complex",
+   "alternatif": "Eosinofilic Granuloma Complex"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "EPL",
+   "nama": "Epilepsi",
+   "alternatif": "Epilepsi"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "EHD",
+   "nama": "Epizootic haemorrhagic disease",
+   "alternatif": "Epizootic haemorrhagic disease"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "EIA",
+   "nama": "Equine infectious anaemia",
+   "alternatif": "Equine infectious anaemia"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "EXP",
+   "nama": "Exopthalmus",
+   "alternatif": "Exopthalmus"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "EYA",
+   "nama": "Eyelid Abnormalities",
+   "alternatif": "Eyelid Abnormalities"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "FLUTD",
+   "nama": "Feline Lower Urinary Tractus Disease",
+   "alternatif": "Feline Lower Urinary Tractus Disease"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "FUS",
+   "nama": "Feline Urolithiasis Syndrome",
+   "alternatif": "Feline Urolithiasis Syndrome"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "FSM",
+   "nama": "Fraktur Simphysis Mandibula",
+   "alternatif": "Fraktur Simphysis Mandibula"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "FRK",
+   "nama": "Fraktura",
+   "alternatif": "Fractures"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "GHB",
+   "nama": "gigitan hewan buas",
+   "alternatif": "wild predator bites"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "GLU",
+   "nama": "Glaukoma",
+   "alternatif": "Glaukoma"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "HET",
+   "nama": "Heat stroke",
+   "alternatif": "Heat stroke"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "HL",
+   "nama": "Hepatic Lipidosis",
+   "alternatif": "Hepatic Lipidosis"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "HER",
+   "nama": "Hernia",
+   "alternatif": "Hernia"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "HCM",
+   "nama": "Hipertrofi Kardiomiopati",
+   "alternatif": "Hipertrofi Kardiomiopati"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "HEAD",
+   "nama": "Hyperadrenocorticism",
+   "alternatif": "Hyperadrenocorticism"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "HKR",
+   "nama": "Hyperkeratosis",
+   "alternatif": "Hyperkeratosis"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "HR",
+   "nama": "Hypertensive Retinopathy",
+   "alternatif": "Hypertensive Retinopathy"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "HOAD",
+   "nama": "Hypoadrenocorticism",
+   "alternatif": "Hypoadrenocorticism"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "ID",
+   "nama": "Indigesti",
+   "alternatif": "Indigest"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "ITS",
+   "nama": "Intususepsi",
+   "alternatif": "Intususepsi"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "IME",
+   "nama": "Iris Melanoma",
+   "alternatif": "Iris Melanoma"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "KCL",
+   "nama": "Kecelakaan",
+   "alternatif": "Accident"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "KCAL",
+   "nama": "Kekurangan Calsium",
+   "alternatif": "Calcium deficiency"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "KR",
+   "nama": "Keracunan",
+   "alternatif": "Poisoning"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "KRP",
+   "nama": "Keracunan Pestisida",
+   "alternatif": "Insecticide poisoning"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "KCS",
+   "nama": "Keratoconjunctivitis Sicca",
+   "alternatif": "Keratoconjunctivitis Sicca"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "KET",
+   "nama": "Ketosis",
+   "alternatif": "Ketosis"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "KLK",
+   "nama": "Kolik",
+   "alternatif": "Colic"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "KSP",
+   "nama": "Konstipasi",
+   "alternatif": "Konstipasi"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "MN",
+   "nama": "Malnutrisi",
+   "alternatif": "Malnutrition"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "WE",
+   "nama": "Mata Putih",
+   "alternatif": "White Eye"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "MCC",
+   "nama": "Microcytosis",
+   "alternatif": "Microcytosis"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "MG",
+   "nama": "Myasthenia Gravis",
+   "alternatif": "Myasthenia Gravis"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "MYO",
+   "nama": "Myopathy",
+   "alternatif": "Myopathy"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "MMVD",
+   "nama": "Myxomatous Mitral Valve Disease (MMVD)",
+   "alternatif": "Myxomatous Mitral Valve Disease (MMVD)"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "NSD",
+   "nama": "Nairobi sheep disease",
+   "alternatif": "Nairobi sheep disease"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "NEU",
+   "nama": "Neuropati",
+   "alternatif": "Neuropati"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "OBS",
+   "nama": "Obstipasi",
+   "alternatif": "Obstipasi"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "OTM",
+   "nama": "othematoma",
+   "alternatif": "othematoma"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "OPA",
+   "nama": "Ovine pulmonary adenomatosis",
+   "alternatif": "Ovine pulmonary adenomatosis"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "PRK",
+   "nama": "Paronikia",
+   "alternatif": "Paronikia"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "PLS",
+   "nama": "plasmasitoma",
+   "alternatif": "plasmasitoma"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "PKD",
+   "nama": "Polycystic Kidney Disease",
+   "alternatif": "Polycystic Kidney Disease"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "PRRS",
+   "nama": "Porcine Reproductive And Respiratory Syndrome",
+   "alternatif": "Porcine Reproductive And Respiratory Syndrome"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "PLB",
+   "nama": "Prolapsus bulbi",
+   "alternatif": "Prolapsus bulbi"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "PLD",
+   "nama": "Prolapsus dubur",
+   "alternatif": "Rectal prolapse"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "PRU",
+   "nama": "Pruritus",
+   "alternatif": "Pruritus"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "PE",
+   "nama": "radang mata",
+   "alternatif": "Pink Eye"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "RSK",
+   "nama": "Radang saluran kencing",
+   "alternatif": "Radang saluran kencing"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "RVU",
+   "nama": "Radang Vesika Urinaria",
+   "alternatif": "Radang Vesika urinaria"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "RNL",
+   "nama": "Ranula",
+   "alternatif": "Ranula"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "RAL",
+   "nama": "Rhinitis Allergy",
+   "alternatif": "Rhinitis Allergy"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "SEQ",
+   "nama": "Sequestrum",
+   "alternatif": "Sequestrum"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "SRM",
+   "nama": "Seroma",
+   "alternatif": "Seroma"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "SPI",
+   "nama": "Splenomegali",
+   "alternatif": "Splenomegali"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "TDKP",
+   "nama": "Tanduk Patah",
+   "alternatif": "Tanduk Patah"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "TRA",
+   "nama": "Torsio Abdominalis",
+   "alternatif": "Torsion abdominal"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "TDS",
+   "nama": "Triaditis",
+   "alternatif": "Triaditis"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "TM",
+   "nama": "Tumor",
+   "alternatif": "Tumor"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "TYM",
+   "nama": "Tympany",
+   "alternatif": "Bloat/Ruminal tympany"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "UP",
+   "nama": "Urachus persisten",
+   "alternatif": "Urachus persisten"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "UR",
+   "nama": "Urolithiasis",
+   "alternatif": "Urolithiasis"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "URT",
+   "nama": "Urtikaria",
+   "alternatif": "Urticaria"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "UVE",
+   "nama": "Uveitis",
+   "alternatif": "Uveitis"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "kode": "VLN",
+   "nama": "Vulnus",
+   "alternatif": "Vulnus"
+  },
+  {
+   "kategori": "LAINNYA",
+   "kode": "TDK",
+   "nama": "tidak diketahui",
+   "alternatif": "unknown"
+  },
+  {
+   "kategori": "LAINNYA",
+   "kode": "TS",
+   "nama": "Tidak sakit",
+   "alternatif": "No disease, not sick"
+  }
+ ],
+ "referensi": {
+  "KALURAHAN": [
+   "Argomulyo",
+   "Glagaharjo",
+   "Kepuharjo",
+   "Umbulharjo",
+   "Wukirsari"
+  ],
+  "JENIS_HEWAN": [
+   "Sapi PFH",
+   "Sapi PO",
+   "Sapi PL",
+   "Sapi PS",
+   "Sapi PM",
+   "Sapi Jersey",
+   "Sapi (umum)",
+   "Kerbau",
+   "Kuda",
+   "Kambing",
+   "Domba",
+   "Kelinci",
+   "Kucing",
+   "Anjing",
+   "Babi",
+   "Ayam Buras",
+   "Ayam Petelur",
+   "Ayam Potong",
+   "Itik",
+   "Puyuh",
+   "Mentok",
+   "Angsa"
+  ],
+  "KELAMIN": [
+   "Jantan",
+   "Betina"
+  ],
+  "PROGNOSA": [
+   "Fausta",
+   "Dubius",
+   "Infausta"
+  ],
+  "DIAGNOSA_GANGREP": [
+   "Abortus",
+   "Anestrus",
+   "Hipofungsi Ovari",
+   "Nimphomania",
+   "Silent Heat",
+   "Corpus Luteum Persisten",
+   "Prolaps",
+   "Atropi Ovari",
+   "Repeat Breeding",
+   "Torsi",
+   "Retensi Plasenta",
+   "Distokia",
+   "Post Partus",
+   "Indurasi Servic",
+   "Mumifikasi Fetus",
+   "Metritis",
+   "Cyste Folikuler",
+   "Endometritis",
+   "Delay Ovulation",
+   "Piometra",
+   "Vulvitis",
+   "Delay Pubertas"
+  ],
+  "DIAGNOSA_PKB": [
+   "Bunting",
+   "Tidak Bunting",
+   "Birahi",
+   "Belum Birahi"
+  ],
+  "SPECIMEN": [
+   "Feses",
+   "Darah",
+   "Serum",
+   "Ulas Darah",
+   "Urine",
+   "Swab",
+   "Susu",
+   "Organ"
+  ],
+  "DIAGNOSA_LAB": [
+   "Negatif",
+   "Helminthiasis",
+   "Fasciola",
+   "Ascaris",
+   "Strongyle",
+   "Paramphistomum",
+   "Trichuris",
+   "Strongyloides",
+   "Toxocara",
+   "Moniezia",
+   "Scabiosis",
+   "Demodecosis",
+   "Coccidiosis",
+   "Taeniasis"
+  ],
+  "JENIS_VAKSIN": [
+   "PMK",
+   "Rabies",
+   "AI",
+   "ND",
+   "Anthraks",
+   "LSD",
+   "ND IB",
+   "Gumboro A",
+   "Gumboro B",
+   "ND Lasota",
+   "SE"
+  ],
+  "DESINFEKTAN": [
+   "Mafisto",
+   "Istam",
+   "Progard",
+   "Neomed HOCl",
+   "TH4",
+   "Virkon S"
+  ],
+  "JENIS_TERNAK": [
+   "Kuda",
+   "Sapi",
+   "Kerbau",
+   "Kambing",
+   "Domba",
+   "Kelinci",
+   "Babi",
+   "Kucing",
+   "Anjing",
+   "Unggas"
+  ],
+  "UNGGAS": [
+   "Ayam Buras",
+   "Ayam Petelur",
+   "Ayam Potong",
+   "Puyuh",
+   "Itik",
+   "Mentok",
+   "Angsa",
+   "Kalkun",
+   "Merpati",
+   "Burung",
+   "Joper"
+  ],
+  "HARI": [
+   "Senin",
+   "Selasa",
+   "Rabu",
+   "Kamis",
+   "Jumat",
+   "Sabtu",
+   "Ahad"
+  ],
+  "METODE_LAYANAN": [
+   "Langsung",
+   "Tidak Langsung",
+   "Telepon/WA",
+   "Kunjungan Lapangan"
+  ]
+ },
+ "crosswalk_isikhnas": [
+  {
+   "kategori": "GANGREP",
+   "label": "Abortus",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Keguguran",
+   "kode": "KGG"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Anestrus",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Hipofungsi ovari",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Hipofungsi ovari",
+   "kode": "HPO"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Nimphomania",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Silent Heat",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Silent Heat",
+   "kode": "SHT"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Corpus Luteum Persisten",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Corpus Luteum Persisten",
+   "kode": "CLP"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Prolaps",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Prolap uteri",
+   "kode": "PLU"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Atropi Ovari",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Atrofi Ovarium",
+   "kode": "ATV"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Repeat Breeding",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "kawin berulang",
+   "kode": "KWB"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Torsi",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Torsio Uteri",
+   "kode": "TRU"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Retensi Plasenta",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Retensio Secundinarum",
+   "kode": "RS"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Distokia",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Distokia",
+   "kode": "DTK"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Post Partus",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Indurasi Servic",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Mumifikasi Fetus",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Mumifikasi",
+   "kode": "MM"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Metritis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Metritis",
+   "kode": "MTT"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Cyste folikuler",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Sistik Folikuler",
+   "kode": "SFL"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Endometritis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Endometritis",
+   "kode": "EDM"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Delay Ovulation",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Piometra",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Pyometra",
+   "kode": "PYO"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Vulvitis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Vulvitis",
+   "kode": "VV"
+  },
+  {
+   "kategori": "GANGREP",
+   "label": "Delay pubertas",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Delayed Pubertas",
+   "kode": "DPB"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "BEF",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Bovine Ephemeral Fever",
+   "kode": "BEF"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "Papilloma",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Papilloma",
+   "kode": "PAP"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "Pink eye",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "radang mata",
+   "kode": "PE"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "ORF",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Orf",
+   "kode": "ORF"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "IBR",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Infectious Bovine Rhinotracheitis",
+   "kode": "IBR"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "Rhinitis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Rhinitis",
+   "kode": "RNT"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "IBD",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Gumboro",
+   "kode": "IBD"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "ND",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Newcastle Disease",
+   "kode": "ND"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "AI",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Avian Influenza - HPAI",
+   "kode": "HPAI"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "SHS",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Swollen Head Syndrome",
+   "kode": "SHS"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "Fowl Pox",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Fowl pox",
+   "kode": "FP"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "Distemper",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "distemper",
+   "kode": "DIST"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "Parvo virus",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Parvovirus",
+   "kode": "PARV"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "Panleukopenia",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Panleukopenia",
+   "kode": "PLK"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "Infeksi Mata",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "Gumboro",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Gumboro",
+   "kode": "IBD"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "ILT",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Infectious laryngtracheitis",
+   "kode": "ILT"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "Herpes",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Endothelial Elephant Herpes Virus",
+   "kode": "EEHV"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "Calici virus",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Feline calicivirus",
+   "kode": "FCV"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "PMK",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Penyakit Mulut dan Kuku",
+   "kode": "PMK"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "LSD",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Lumpy skin disease",
+   "kode": "LSD"
+  },
+  {
+   "kategori": "VIRAL",
+   "label": "FIP",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Feline infectious peritonitis",
+   "kode": "FIP"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "label": "Helminth",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Cacingan",
+   "kode": "CAC"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "label": "Fasciola",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Fasciolosis",
+   "kode": "FAS"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "label": "Ascaris",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Ascaridiasis",
+   "kode": "ASCD"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "label": "Stronggyl",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "label": "Paramphis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Paramphistomiasis",
+   "kode": "PPT"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "label": "Trichuris",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Trichuriasis",
+   "kode": "TRC"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "label": "Strongyloides",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "label": "Toxocara",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Ascariasis/Toxocariasis",
+   "kode": "ASC"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "label": "Moniezia",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Monieziasis",
+   "kode": "MNZ"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "label": "Dipylidium",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "label": "Isospora",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "label": "Ancylostoma",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Ancylostomiasis",
+   "kode": "ANC"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "label": "Taeniasis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Cestodiasis",
+   "kode": "CST"
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "label": "Larva cacing",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "label": "Caplak",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "label": "Kutu",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Infestasi Kutu",
+   "kode": "IFK"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "label": "Tungau",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "label": "Scabiosis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Scabies",
+   "kode": "SC"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "label": "Demodec",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "demodex",
+   "kode": "DEM"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "label": "Cascado",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "kaskado",
+   "kode": "STE"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "label": "Ring Worm",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Ring Worm",
+   "kode": "RW"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "label": "Candidiosis",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "label": "Dermatomycosis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Dermatophitosis",
+   "kode": "DMT"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "label": "Pinjal",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "label": "Aspergilus",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "label": "Cocci diosis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Coccidiosis",
+   "kode": "COC"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "label": "Toxoplasma",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Toxoplasmosis",
+   "kode": "TOXO"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "label": "Surra",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Surra",
+   "kode": "SU"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "label": "Eimeria",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "label": "Theileriosis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Theileriosis",
+   "kode": "THEI"
+  },
+  {
+   "kategori": "PROTOZOA",
+   "label": "Babesiosis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Babesiosis",
+   "kode": "BB"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Mastitis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Mastitis",
+   "kode": "MAS"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Pneumonia",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Pneumonia",
+   "kode": "PNEU"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Diare",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Enteritis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Enteritis",
+   "kode": "ENT"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "CRD",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "CRD",
+   "kode": "CRD"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Pullorum",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Pullorum",
+   "kode": "PUL"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Arthritis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Artritis",
+   "kode": "ART"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Konjungtivitis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Konjunctivitis",
+   "kode": "CJT"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Brucellosis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Brucellosis",
+   "kode": "BR"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Omphalitis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Omphalitis",
+   "kode": "OMP"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Gastritis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Gastritis",
+   "kode": "GST"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Gastro enteritis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Gastroenteritis",
+   "kode": "GAST"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Dermatitis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Dermatitis",
+   "kode": "DRM"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Profilaksis",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Urtikaris",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Faringitis",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Stomatitis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Stomatitis",
+   "kode": "STS"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Laminitis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Laminitis",
+   "kode": "LMS"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Leptospirosis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Leptospirosis",
+   "kode": "LEP"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Otitis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Otitis Eksterna",
+   "kode": "OE"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Endo metritis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Endometritis",
+   "kode": "EDM"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Bleparitis",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Cystitis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Cystitis",
+   "kode": "CTS"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Footroot",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Footroot",
+   "kode": "FR"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Erycipelas",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Erysipelas",
+   "kode": "ERY"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Tracheitis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Feline Viral Rhinotracheitis",
+   "kode": "FVR"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "uretheritis",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Fowl cholera",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Fowl Cholera",
+   "kode": "FC"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Snot",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Balanitis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Balanopostitis",
+   "kode": "BLN"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Balanopostitis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Balanopostitis",
+   "kode": "BLN"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Bronchitis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Bronchitis",
+   "kode": "BC"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Metritis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Metritis",
+   "kode": "MTT"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Bumble foot",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Clamidia",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Chlamydiosis",
+   "kode": "CHL"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Myositis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Myositis",
+   "kode": "MST"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Rhinotrachaetis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Rhinitis",
+   "kode": "RNT"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Salmonelosis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Salmonellosis",
+   "kode": "SAL"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Nefritis",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Tetanus",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Tetanus",
+   "kode": "TET"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Sinusitis",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Berak kapur",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": "Colibacillosis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Colibacillosis",
+   "kode": "COL"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Indigesti",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Indigesti",
+   "kode": "ID"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Bloat",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Tympany",
+   "kode": "TYM"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Myasis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "miasis",
+   "kode": "MYS"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Intoksikasi",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Abses",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Abses",
+   "kode": "AB"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Anoreksi",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Hipo  calcemia",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Kekurangan Calsium",
+   "kode": "KCAL"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "SSA",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Fraktur",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Fraktura",
+   "kode": "FRK"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Def. Vit",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "avitaminosis",
+   "kode": "AVIT"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Anemia",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Impaksio Rumen",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Oedema",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Hernia Umbilikalis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Hernia",
+   "kode": "HER"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Choke",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Lemah",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Vulnus",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Vulnus",
+   "kode": "VLN"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Kontusi",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Alergi",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Kolik",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Kolik",
+   "kode": "KLK"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Glossitis",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Lumpuh",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Traumatik",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Luksasi",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Pincang",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Febris",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Malnutrisi",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Malnutrisi",
+   "kode": "MN"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Ambruk",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Dehidrasi",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Othematoma",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "othematoma",
+   "kode": "OTM"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Cyste",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Sistik Folikuler",
+   "kode": "SFL"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Statis Ingluvies",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Bottlejow",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Luka",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Dislokasi",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Defisiensi Mineral",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Epistaxis",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Urolithiasis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Urolithiasis",
+   "kode": "UR"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Ascites",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Orchitis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Orchitis",
+   "kode": "ORC"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Konstipasi",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Konstipasi",
+   "kode": "KSP"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Dermato micosis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Mikosis",
+   "kode": "MKS"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Dermato philosis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Dermatophilosis",
+   "kode": "DERM"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Digest Crop Inpaction",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Stres",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Heat stroke",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Heat stroke",
+   "kode": "HET"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Tumor",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Tumor",
+   "kode": "TM"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Patah tanduk",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Tanduk Patah",
+   "kode": "TDKP"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Atresia Ani",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Atresia ani",
+   "kode": "ATA"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Parapimosis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Paraphimosis",
+   "kode": "PRPM"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Gingivitis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Feline Chronic Gingivostomatitis",
+   "kode": "FCG"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Alopecia",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "ISK",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Radang saluran kencing",
+   "kode": "RSK"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Avitaminosis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "avitaminosis",
+   "kode": "AVIT"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Hipotermia",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Prolaps anus",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Prolapsus dubur",
+   "kode": "PLD"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "post vaksinasi",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Lahir Prematur",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Lahir Prematur",
+   "kode": "LP"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Stress lingkungan",
+   "ada_di_isikhnas": "Tidak",
+   "padanan": "-",
+   "kode": "-"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Prolaps bolbus oculi",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Prolapsus bulbi",
+   "kode": "PLB"
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": "Hepatitis",
+   "ada_di_isikhnas": "Ya",
+   "padanan": "Hepatitis",
+   "kode": "HPT"
+  },
+  {
+   "kategori": "Kategori",
+   "label": "Cocok",
+   "ada_di_isikhnas": "Total",
+   "padanan": "% Cakupan",
+   "kode": null
+  },
+  {
+   "kategori": "GANGREP",
+   "label": 17,
+   "ada_di_isikhnas": 22,
+   "padanan": 0.772727272727273,
+   "kode": null
+  },
+  {
+   "kategori": "VIRAL",
+   "label": 21,
+   "ada_di_isikhnas": 22,
+   "padanan": 0.954545454545455,
+   "kode": null
+  },
+  {
+   "kategori": "BAKTERIAL",
+   "label": 32,
+   "ada_di_isikhnas": 43,
+   "padanan": 0.744186046511628,
+   "kode": null
+  },
+  {
+   "kategori": "ENDOPARASIT",
+   "label": 9,
+   "ada_di_isikhnas": 14,
+   "padanan": 0.642857142857143,
+   "kode": null
+  },
+  {
+   "kategori": "EKTOPARASIT",
+   "label": 6,
+   "ada_di_isikhnas": 11,
+   "padanan": 0.545454545454545,
+   "kode": null
+  },
+  {
+   "kategori": "PROTOZOA",
+   "label": 5,
+   "ada_di_isikhnas": 6,
+   "padanan": 0.833333333333333,
+   "kode": null
+  },
+  {
+   "kategori": "INDIVIDUAL",
+   "label": 30,
+   "ada_di_isikhnas": 61,
+   "padanan": 0.491803278688525,
+   "kode": null
+  },
+  {
+   "kategori": "TOTAL",
+   "label": 120,
+   "ada_di_isikhnas": 179,
+   "padanan": 0.670391061452514,
+   "kode": null
+  }
+ ],
+ "ras_ternak": [
+  {
+   "id": "ras-001",
+   "spesies": "Sapi",
+   "nama": "PFH"
+  },
+  {
+   "id": "ras-002",
+   "spesies": "Sapi",
+   "nama": "PO"
+  },
+  {
+   "id": "ras-003",
+   "spesies": "Sapi",
+   "nama": "PL"
+  },
+  {
+   "id": "ras-004",
+   "spesies": "Sapi",
+   "nama": "PS"
+  },
+  {
+   "id": "ras-005",
+   "spesies": "Sapi",
+   "nama": "PM"
+  },
+  {
+   "id": "ras-006",
+   "spesies": "Sapi",
+   "nama": "Jersey"
+  },
+  {
+   "id": "ras-007",
+   "spesies": "Sapi",
+   "nama": "Umum"
+  },
+  {
+   "id": "ras-008",
+   "spesies": "Kerbau",
+   "nama": "Umum"
+  },
+  {
+   "id": "ras-009",
+   "spesies": "Kuda",
+   "nama": "Umum"
+  },
+  {
+   "id": "ras-010",
+   "spesies": "Kambing",
+   "nama": "Umum"
+  },
+  {
+   "id": "ras-011",
+   "spesies": "Domba",
+   "nama": "Umum"
+  },
+  {
+   "id": "ras-012",
+   "spesies": "Kelinci",
+   "nama": "Umum"
+  },
+  {
+   "id": "ras-013",
+   "spesies": "Kucing",
+   "nama": "Umum"
+  },
+  {
+   "id": "ras-014",
+   "spesies": "Anjing",
+   "nama": "Umum"
+  },
+  {
+   "id": "ras-015",
+   "spesies": "Babi",
+   "nama": "Umum"
+  },
+  {
+   "id": "ras-016",
+   "spesies": "Ayam",
+   "nama": "Buras"
+  },
+  {
+   "id": "ras-017",
+   "spesies": "Ayam",
+   "nama": "Petelur"
+  },
+  {
+   "id": "ras-018",
+   "spesies": "Ayam",
+   "nama": "Potong"
+  },
+  {
+   "id": "ras-019",
+   "spesies": "Itik",
+   "nama": "Umum"
+  },
+  {
+   "id": "ras-020",
+   "spesies": "Puyuh",
+   "nama": "Umum"
+  },
+  {
+   "id": "ras-021",
+   "spesies": "Mentok",
+   "nama": "Umum"
+  },
+  {
+   "id": "ras-022",
+   "spesies": "Angsa",
+   "nama": "Umum"
+  }
+ ],
+ "_catatan_wilayah": "Pohon wilayah (kapanewon>kalurahan>padukuhan) diseed terpisah dari sumber resmi Kemendagri/BPS Sleman."
+}
