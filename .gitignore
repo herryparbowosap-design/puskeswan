@@ -12,3 +12,8 @@ dist/
 !.env.example
 # OS
 .DS_Store
+.env.*
+credentials.json
+*.pem
+*.key
+.credentials
