@@ -43,7 +43,7 @@ app.add_middleware(
 )
 
 
-@app.get("/health")
+@app.get("/api/health")
 async def health():
     try:
         await get_client().admin.command("ping")
@@ -53,4 +53,4 @@ async def health():
     return {"status": "ok", "service": "puskeswan", "mongo": mongo_ok}
 
 
-app.include_router(storage_s3.router)
+app.include_router(storage_s3.router, prefix="/api")
