@@ -11,9 +11,12 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from db import get_client, get_db
 import storage_s3
+import seed
+from auth import router as auth_router, admin_router
 
 
 async def ensure_indexes(db):
+    await db.users.create_index("username", unique=True)
     await db.peternak.create_index([("nama", "text"), ("kontak", "text"), ("nik", "text")])
     await db.peternak.create_index([("koordinat", "2dsphere")])
     await db.ternak.create_index("peternak_id")
@@ -27,11 +30,13 @@ async def ensure_indexes(db):
 async def lifespan(app: FastAPI):
     await get_client().admin.command("ping")
     await ensure_indexes(get_db())
+    await seed.seed_master_if_empty()
+    await seed.seed_admin_if_missing()
     yield
     get_client().close()
 
 
-app = FastAPI(title="SIM Puskeswan", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="SIM Puskeswan", version="0.2.0", lifespan=lifespan)
 
 origins = [o for o in os.getenv("CORS_ORIGINS", "*").split(",") if o]
 app.add_middleware(
@@ -53,4 +58,6 @@ async def health():
     return {"status": "ok", "service": "puskeswan", "mongo": mongo_ok}
 
 
+app.include_router(auth_router, prefix="/api")
+app.include_router(admin_router, prefix="/api")
 app.include_router(storage_s3.router, prefix="/api")
