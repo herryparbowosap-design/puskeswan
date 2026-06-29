@@ -50,3 +50,17 @@ async def seed_admin_if_missing():
         "aktif": True,
         "created_at": datetime.now(timezone.utc),
     })
+
+
+SEED_WILAYAH = Path(__file__).parent / "seed-wilayah-godean.json"
+
+
+async def seed_wilayah_if_empty():
+    db = get_db()
+    if await db.wilayah.count_documents({}) > 0:
+        return
+    if not SEED_WILAYAH.exists():
+        return
+    data = json.loads(SEED_WILAYAH.read_text(encoding="utf-8"))
+    if data:
+        await db.wilayah.insert_many(data)
