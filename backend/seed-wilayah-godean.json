@@ -1,0 +1,10 @@
+[
+  {"id":"godean","nama":"Godean","level":"kapanewon","parent_id":null,"kode":null,"koordinat":{"type":"Point","coordinates":[110.29336,-7.76774]}},
+  {"id":"godean-sidoarum","nama":"Sidoarum","level":"kalurahan","parent_id":"godean","kode":null},
+  {"id":"godean-sidoluhur","nama":"Sidoluhur","level":"kalurahan","parent_id":"godean","kode":null},
+  {"id":"godean-sidomulyo","nama":"Sidomulyo","level":"kalurahan","parent_id":"godean","kode":null},
+  {"id":"godean-sidoagung","nama":"Sidoagung","level":"kalurahan","parent_id":"godean","kode":null},
+  {"id":"godean-sidokarto","nama":"Sidokarto","level":"kalurahan","parent_id":"godean","kode":null},
+  {"id":"godean-sidorejo","nama":"Sidorejo","level":"kalurahan","parent_id":"godean","kode":null},
+  {"id":"godean-sidomoyo","nama":"Sidomoyo","level":"kalurahan","parent_id":"godean","kode":null}
+]
