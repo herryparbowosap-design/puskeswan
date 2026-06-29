@@ -12,6 +12,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from db import get_client, get_db
 import storage_s3
 import seed
+import wilayah
+import ras
+import peternak
+import ternak
 from auth import router as auth_router, admin_router
 
 
@@ -31,12 +35,13 @@ async def lifespan(app: FastAPI):
     await get_client().admin.command("ping")
     await ensure_indexes(get_db())
     await seed.seed_master_if_empty()
+    await seed.seed_wilayah_if_empty()
     await seed.seed_admin_if_missing()
     yield
     get_client().close()
 
 
-app = FastAPI(title="SIM Puskeswan", version="0.2.0", lifespan=lifespan)
+app = FastAPI(title="SIM Puskeswan", version="0.3.0", lifespan=lifespan)
 
 origins = [o for o in os.getenv("CORS_ORIGINS", "*").split(",") if o]
 app.add_middleware(
@@ -61,3 +66,7 @@ async def health():
 app.include_router(auth_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
 app.include_router(storage_s3.router, prefix="/api")
+app.include_router(wilayah.router, prefix="/api")
+app.include_router(ras.router, prefix="/api")
+app.include_router(peternak.router, prefix="/api")
+app.include_router(ternak.router, prefix="/api")
