@@ -393,7 +393,7 @@ function PenyakitPicker({ value, onChange }) {
 function PelayananForm({ peternak, onCreated, onCancel }) {
   const [f, setF] = useState({
     tgl: new Date().toISOString().slice(0, 10), jumlah: 1,
-    diagnosa_teks: "", tindakan: "", prognosa: "", metode_layanan: "Kunjungan Lapangan", keterangan: "",
+    diagnosa_teks: "", tindakan: "", prognosa: "", modalitas: "", metode_layanan: "Kunjungan Lapangan", keterangan: "",
   });
   const [ternakList, setTernakList] = useState([]);
   const [ternakSel, setTernakSel] = useState("");      // id ternak | "lainnya" | ""
@@ -488,6 +488,7 @@ function PelayananForm({ peternak, onCreated, onCancel }) {
       if (penyakit) body.penyakit_id = penyakit.penyakit_id;
       if (f.tindakan) body.tindakan = f.tindakan;
       if (f.prognosa) body.prognosa = f.prognosa;
+      if (f.modalitas) body.modalitas = f.modalitas;
       if (f.metode_layanan) body.metode_layanan = f.metode_layanan;
       if (f.keterangan) body.keterangan = f.keterangan;
       if (ternakObj) {
@@ -606,6 +607,10 @@ function PelayananForm({ peternak, onCreated, onCancel }) {
         )}
       </div>
 
+      <select style={inp} value={f.modalitas} onChange={(e) => setF({ ...f, modalitas: e.target.value })}>
+        <option value="">— Modalitas (Pasif/Aktif/Semiaktif) —</option>
+        <option>Pasif</option><option>Aktif</option><option>Semiaktif</option><option>Yanduwan/Vaksinasi</option>
+      </select>
       <div style={{ display: "flex", gap: 8 }}>
         <select style={inp} value={f.prognosa} onChange={(e) => setF({ ...f, prognosa: e.target.value })}>
           <option value="">— Prognosa —</option>
@@ -705,8 +710,8 @@ function PelayananList({ peternakId, refreshKey, isAdmin }) {
               {p.foto.map((x) => <FotoThumb key={x.key} fotoKey={x.key} />)}
             </div>
           )}
-          {(p.prognosa || p.metode_layanan) && (
-            <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>{[p.prognosa, p.metode_layanan].filter(Boolean).join(" · ")}</div>
+          {(p.modalitas || p.prognosa || p.metode_layanan) && (
+            <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>{[p.modalitas, p.prognosa, p.metode_layanan].filter(Boolean).join(" · ")}</div>
           )}
         </div>
       ))}
@@ -1090,8 +1095,33 @@ function TernakDraftEditor({ items, onChange }) {
   );
 }
 
+const KONTAK_PUSKESWAN = "081328105535";
+const JADWAL = [
+  { judul: "Hewan Kesayangan — Pelayanan Pasif", ket: "Pemilik datang ke Puskeswan", jam: "Sen–Kam 08.00–10.00 · Jum 08.00–09.30 WIB" },
+  { judul: "Hewan Ternak — Pelayanan Aktif", ket: "Kunjungan petugas ke kandang (terjadwal)", jam: "Sen–Kam 10.00–12.00 · Jum 09.30–11.00 WIB" },
+  { judul: "Semiaktif — Atas Permintaan", ket: "Daftar/lapor lalu dijadwalkan kunjungan", jam: "Daftar Sen–Kam 08.00–12.00 (Jum s/d 11.00) · Kunjungan 12.00–15.00 (Jum 11.00–14.00)" },
+];
+
+function JadwalCard() {
+  return (
+    <div style={{ ...card, display: "grid", gap: 8 }}>
+      <strong>Jadwal Pelayanan — Puskeswan Godean</strong>
+      {JADWAL.map((j, i) => (
+        <div key={i} style={{ fontSize: 13, borderTop: i ? "1px solid #f0f0f0" : "none", paddingTop: i ? 6 : 0 }}>
+          <div style={{ fontWeight: 600, color: "#0f6e56" }}>{j.judul}</div>
+          <div style={{ color: "#666" }}>{j.ket}</div>
+          <div style={{ color: "#333" }}>{j.jam}</div>
+        </div>
+      ))}
+      <div style={{ fontSize: 12, color: "#a33" }}>Sabtu, Minggu &amp; libur nasional: TUTUP.</div>
+      <div style={{ fontSize: 12, color: "#666" }}>Saat Yanduwan/Vaksinasi petugas bertugas di lapangan — pelayanan pasif ditiadakan &amp; semiaktif ditunda, tetapi pendaftaran tetap dibuka.</div>
+      <div style={{ fontSize: 13 }}>Kontak: <strong>{KONTAK_PUSKESWAN}</strong></div>
+    </div>
+  );
+}
+
 function PublicDaftar() {
-  const [f, setF] = useState({ nama: "", kontak: "", nik: "", alamat_detail: "", catatan: "" });
+  const [f, setF] = useState({ nama: "", kontak: "", nik: "", alamat_detail: "", catatan: "", jenis_layanan: "" });
   const [wil, setWil] = useState({ kapanewon_id: null, kalurahan_id: null, padukuhan_id: null });
   const [koord, setKoord] = useState(null);
   const [gps, setGps] = useState("");
@@ -1126,6 +1156,7 @@ function PublicDaftar() {
     try {
       const body = { ...f, ...wil, sumber: "qr", ternak: ternakDraftPayload(ternak) };
       if (!body.nik) delete body.nik;
+      if (!body.jenis_layanan) delete body.jenis_layanan;
       if (koord) body.koordinat = koord;
       await jpost("/pendaftaran", body);
       setDone(true);
@@ -1145,7 +1176,7 @@ function PublicDaftar() {
           <div style={{ fontSize: 40 }}>✅</div>
           <h2 style={{ margin: 0, fontWeight: 600 }}>Pendaftaran terkirim</h2>
           <p style={{ color: "#666", margin: 0 }}>Terima kasih. Tunjukkan layar ini ke petugas untuk verifikasi, atau tunggu petugas menghubungi.</p>
-          <button style={btnGhost} onClick={() => { setDone(false); setF({ nama: "", kontak: "", nik: "", alamat_detail: "", catatan: "" }); setWil({ kapanewon_id: null, kalurahan_id: null, padukuhan_id: null }); setTernak([]); setKoord(null); setGps(""); }}>Daftar lagi</button>
+          <button style={btnGhost} onClick={() => { setDone(false); setF({ nama: "", kontak: "", nik: "", alamat_detail: "", catatan: "", jenis_layanan: "" }); setWil({ kapanewon_id: null, kalurahan_id: null, padukuhan_id: null }); setTernak([]); setKoord(null); setGps(""); }}>Daftar lagi</button>
         </div>
       </div>
     );
@@ -1170,11 +1201,19 @@ function PublicDaftar() {
         <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>Ternak yang dimiliki</div>
         <TernakDraftEditor items={ternak} onChange={setTernak} />
 
+        <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>Jenis pelayanan yang diminta</div>
+        <select style={inp} value={f.jenis_layanan} onChange={(e) => setF({ ...f, jenis_layanan: e.target.value })}>
+          <option value="">— Pilih —</option>
+          <option value="pasif">Pasif — saya datang ke Puskeswan (hewan kesayangan)</option>
+          <option value="aktif">Aktif — kunjungan ke kandang (ternak)</option>
+          <option value="semiaktif">Semiaktif — minta kunjungan atas permintaan</option>
+        </select>
         <input style={inp} placeholder="Catatan / keluhan (opsional)" value={f.catatan} onChange={(e) => setF({ ...f, catatan: e.target.value })} />
         {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
         <button style={btn} disabled={busy || !f.nama || !f.kontak} onClick={submit}>{busy ? "Mengirim…" : "Kirim pendaftaran"}</button>
         <div style={{ fontSize: 11, color: "#999" }}>Data Anda akan diverifikasi petugas sebelum tercatat resmi.</div>
       </div>
+      <div style={{ marginTop: 14 }}><JadwalCard /></div>
     </div>
   );
 }
@@ -1228,6 +1267,7 @@ function PendaftaranConfirm({ item, onBack, onDone }) {
         <input style={inp} placeholder="NIK (opsional)" value={f.nik} onChange={(e) => setF({ ...f, nik: e.target.value })} />
         <WilayahCascade value={wil} onChange={setWil} />
         <input style={inp} placeholder="Alamat detail" value={f.alamat_detail} onChange={(e) => setF({ ...f, alamat_detail: e.target.value })} />
+        {item.jenis_layanan && <div style={{ fontSize: 13, color: "#0f6e56" }}>Jenis layanan diminta: {item.jenis_layanan}</div>}
         {item.catatan && <div style={{ fontSize: 13, color: "#666" }}>Catatan pemohon: {item.catatan}</div>}
         {koord && <div style={{ fontSize: 13, color: "#0f6e56" }}>📍 Lokasi GPS terlampir</div>}
         <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>Ternak</div>
@@ -1269,7 +1309,7 @@ function PendaftaranPage({ onConfirmed }) {
                 <strong>{d.nama}</strong>
                 <span style={{ fontSize: 12, color: "#9a7b00" }}>{d.sumber || "—"}</span>
               </div>
-              <div style={{ fontSize: 13, color: "#666" }}>{d.kontak}{d.ternak && d.ternak.length ? ` · ${d.ternak.length} ternak` : " · belum ada ternak"}</div>
+              <div style={{ fontSize: 13, color: "#666" }}>{d.kontak}{d.ternak && d.ternak.length ? ` · ${d.ternak.length} ternak` : " · belum ada ternak"}{d.jenis_layanan ? ` · ${d.jenis_layanan}` : ""}</div>
             </div>
           ))}
         </div>
@@ -1351,6 +1391,9 @@ function LaporanPage() {
     push("Mutasi ternak");
     Object.entries(data.ternak_mutasi).forEach(([k, v]) => push(k, v));
     push("");
+    push("Per modalitas");
+    Object.entries(data.pelayanan.per_modalitas || {}).forEach(([k, v]) => push(k, v));
+    push("");
     push("Per penyakit (iSIKHNAS)"); push("Kode", "Nama", "Jumlah");
     data.pelayanan.per_penyakit.forEach((x) => push(x.kode, x.nama, x.jumlah));
     push("");
@@ -1412,6 +1455,7 @@ function LaporanPage() {
             <StatBox label="Kematian ternak" val={data.ternak_mutasi.mati || 0} />
           </div>
           <div style={{ ...card, fontSize: 13, color: "#555" }}>
+            <div>Modalitas: {ringkas(data.pelayanan.per_modalitas)}</div>
             <div>Metode: {ringkas(data.pelayanan.per_metode)}</div>
             <div>Prognosa: {ringkas(data.pelayanan.per_prognosa)}</div>
             <div>Mutasi ternak: {ringkas(data.ternak_mutasi)}</div>
