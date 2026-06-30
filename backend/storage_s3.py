@@ -26,8 +26,10 @@ from typing import Optional
 
 import boto3
 from botocore.config import Config
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
+
+from auth import current_user, require_roles
 
 BUCKET = os.getenv("S3_BUCKET", "puskeswan-foto")
 _IMG_EXT = {".jpg", ".jpeg", ".png", ".webp", ".heic"}
@@ -97,7 +99,7 @@ class UploadDibuat(BaseModel):
 
 
 @router.post("/presign-upload", response_model=UploadDibuat)
-def minta_upload(body: MintaUpload):
+def minta_upload(body: MintaUpload, user=Depends(require_roles("petugas", "admin"))):
     if not body.content_type.startswith("image/"):
         from fastapi import HTTPException
         raise HTTPException(400, "hanya file gambar")
@@ -110,5 +112,5 @@ class UrlFoto(BaseModel):
 
 
 @router.get("/url", response_model=UrlFoto)
-def url_foto(key: str):
+def url_foto(key: str, _user=Depends(current_user)):
     return UrlFoto(url=presign_download(key))
