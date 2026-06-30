@@ -1024,9 +1024,268 @@ function ObatPage({ isAdmin }) {
   );
 }
 
+function ternakDraftPayload(items) {
+  return items.filter((t) => t.spesies).map((t) => {
+    const o = { spesies: t.spesies, mode: t.mode };
+    if (t.ras_id) o.ras_id = t.ras_id;
+    if (t.mode === "individu") {
+      if (t.eartag) o.eartag = t.eartag;
+      if (t.jenis_kelamin) o.jenis_kelamin = t.jenis_kelamin;
+    } else if (t.jml_deklarasi) {
+      o.jml_deklarasi = parseInt(t.jml_deklarasi, 10);
+    }
+    return o;
+  });
+}
+
+function TernakDraftRow({ t, spesiesList, onUpd, onDel }) {
+  const [rasList, setRasList] = useState([]);
+  useEffect(() => {
+    if (t.spesies) jget(`/ras?spesies=${encodeURIComponent(t.spesies)}`).then(setRasList).catch(() => setRasList([]));
+    else setRasList([]);
+  }, [t.spesies]);
+  return (
+    <div style={{ ...card, display: "grid", gap: 8, background: "#fafafa" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <strong style={{ fontSize: 13 }}>Ternak</strong>
+        <button type="button" onClick={onDel} style={{ ...btnGhost, padding: "2px 8px", fontSize: 12, color: "#c00", borderColor: "#e0b4b4" }}>Hapus</button>
+      </div>
+      <select style={inp} value={t.spesies} onChange={(e) => onUpd({ spesies: e.target.value, ras_id: "" })}>
+        <option value="">— Spesies * —</option>
+        {spesiesList.map((s) => <option key={s} value={s}>{s}</option>)}
+      </select>
+      <select style={inp} value={t.ras_id} disabled={!t.spesies} onChange={(e) => onUpd({ ras_id: e.target.value })}>
+        <option value="">— Ras —</option>
+        {rasList.map((r) => <option key={r.id} value={r.id}>{r.nama}</option>)}
+      </select>
+      <select style={inp} value={t.mode} onChange={(e) => onUpd({ mode: e.target.value })}>
+        <option value="individu">Individu (per ekor)</option>
+        <option value="populasi">Populasi (kelompok)</option>
+      </select>
+      {t.mode === "individu" ? (
+        <div style={{ display: "flex", gap: 8 }}>
+          <input style={inp} placeholder="Eartag / nomor" value={t.eartag} onChange={(e) => onUpd({ eartag: e.target.value })} />
+          <select style={{ ...inp, width: 130 }} value={t.jenis_kelamin} onChange={(e) => onUpd({ jenis_kelamin: e.target.value })}>
+            <option value="">— Kelamin —</option><option value="betina">Betina</option><option value="jantan">Jantan</option>
+          </select>
+        </div>
+      ) : (
+        <input style={inp} type="number" min="1" placeholder="Jumlah ekor" value={t.jml_deklarasi} onChange={(e) => onUpd({ jml_deklarasi: e.target.value })} />
+      )}
+    </div>
+  );
+}
+
+function TernakDraftEditor({ items, onChange }) {
+  const [spesiesList, setSpesiesList] = useState([]);
+  useEffect(() => { jget("/ras/spesies").then(setSpesiesList).catch(() => {}); }, []);
+  const add = () => onChange([...items, { spesies: "", ras_id: "", mode: "individu", eartag: "", jenis_kelamin: "", jml_deklarasi: "" }]);
+  const upd = (i, patch) => onChange(items.map((t, j) => (j === i ? { ...t, ...patch } : t)));
+  const del = (i) => onChange(items.filter((_, j) => j !== i));
+  return (
+    <div style={{ display: "grid", gap: 10 }}>
+      {items.map((t, i) => <TernakDraftRow key={i} t={t} spesiesList={spesiesList} onUpd={(p) => upd(i, p)} onDel={() => del(i)} />)}
+      <button type="button" style={btnGhost} onClick={add}>+ Tambah ternak</button>
+    </div>
+  );
+}
+
+function PublicDaftar() {
+  const [f, setF] = useState({ nama: "", kontak: "", nik: "", alamat_detail: "", catatan: "" });
+  const [wil, setWil] = useState({ kapanewon_id: null, kalurahan_id: null, padukuhan_id: null });
+  const [koord, setKoord] = useState(null);
+  const [gps, setGps] = useState("");
+  const [ternak, setTernak] = useState([]);
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+
+  // Konteks dari QR, mis. #/daftar?kalurahan=<id>
+  useEffect(() => {
+    const h = window.location.hash || "";
+    const q = h.includes("?") ? new URLSearchParams(h.split("?")[1]) : null;
+    if (q) {
+      const kap = q.get("kapanewon"), kal = q.get("kalurahan");
+      if (kap || kal) setWil((w) => ({ ...w, kapanewon_id: kap || w.kapanewon_id, kalurahan_id: kal || w.kalurahan_id }));
+    }
+  }, []);
+
+  function ambilGPS() {
+    if (!navigator.geolocation) { setGps("perangkat tak mendukung lokasi"); return; }
+    setGps("mengambil…");
+    navigator.geolocation.getCurrentPosition(
+      (p) => { setKoord({ lat: p.coords.latitude, lng: p.coords.longitude }); setGps("lokasi terekam ✓"); },
+      () => setGps("gagal ambil lokasi"),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
+  async function submit() {
+    setErr(null);
+    setBusy(true);
+    try {
+      const body = { ...f, ...wil, sumber: "qr", ternak: ternakDraftPayload(ternak) };
+      if (!body.nik) delete body.nik;
+      if (koord) body.koordinat = koord;
+      await jpost("/pendaftaran", body);
+      setDone(true);
+    } catch (e) {
+      setErr(String(e.message || e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const wrap = { maxWidth: 520, margin: "3vh auto", padding: 16 };
+
+  if (done) {
+    return (
+      <div style={wrap}>
+        <div style={{ ...card, textAlign: "center", display: "grid", gap: 10 }}>
+          <div style={{ fontSize: 40 }}>✅</div>
+          <h2 style={{ margin: 0, fontWeight: 600 }}>Pendaftaran terkirim</h2>
+          <p style={{ color: "#666", margin: 0 }}>Terima kasih. Tunjukkan layar ini ke petugas untuk verifikasi, atau tunggu petugas menghubungi.</p>
+          <button style={btnGhost} onClick={() => { setDone(false); setF({ nama: "", kontak: "", nik: "", alamat_detail: "", catatan: "" }); setWil({ kapanewon_id: null, kalurahan_id: null, padukuhan_id: null }); setTernak([]); setKoord(null); setGps(""); }}>Daftar lagi</button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={wrap}>
+      <h1 style={{ fontWeight: 600, fontSize: 22, marginBottom: 2 }}>Pendaftaran Peternak</h1>
+      <p style={{ color: "#666", marginTop: 0, fontSize: 14 }}>Puskeswan Godean — isi data diri & ternak Anda.</p>
+      <div style={{ ...card, display: "grid", gap: 10 }}>
+        <input style={inp} placeholder="Nama lengkap *" value={f.nama} onChange={(e) => setF({ ...f, nama: e.target.value })} />
+        <input style={inp} placeholder="No. HP / WhatsApp *" value={f.kontak} onChange={(e) => setF({ ...f, kontak: e.target.value })} />
+        <input style={inp} placeholder="NIK (opsional)" value={f.nik} onChange={(e) => setF({ ...f, nik: e.target.value })} />
+        <div style={{ fontSize: 13, color: "#666" }}>Wilayah</div>
+        <WilayahCascade value={wil} onChange={setWil} />
+        <input style={inp} placeholder="Alamat detail (RT/RW, patokan)" value={f.alamat_detail} onChange={(e) => setF({ ...f, alamat_detail: e.target.value })} />
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <button type="button" style={btnGhost} onClick={ambilGPS}>📍 Ambil lokasi GPS</button>
+          <span style={{ fontSize: 13, color: "#666" }}>{gps}</span>
+        </div>
+
+        <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>Ternak yang dimiliki</div>
+        <TernakDraftEditor items={ternak} onChange={setTernak} />
+
+        <input style={inp} placeholder="Catatan / keluhan (opsional)" value={f.catatan} onChange={(e) => setF({ ...f, catatan: e.target.value })} />
+        {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
+        <button style={btn} disabled={busy || !f.nama || !f.kontak} onClick={submit}>{busy ? "Mengirim…" : "Kirim pendaftaran"}</button>
+        <div style={{ fontSize: 11, color: "#999" }}>Data Anda akan diverifikasi petugas sebelum tercatat resmi.</div>
+      </div>
+    </div>
+  );
+}
+
+function PendaftaranConfirm({ item, onBack, onDone }) {
+  const [f, setF] = useState({ nama: item.nama || "", kontak: item.kontak || "", nik: item.nik || "", alamat_detail: item.alamat_detail || "" });
+  const [wil, setWil] = useState({ kapanewon_id: item.kapanewon_id || null, kalurahan_id: item.kalurahan_id || null, padukuhan_id: item.padukuhan_id || null });
+  const [ternak, setTernak] = useState((item.ternak || []).map((t) => ({
+    spesies: t.spesies || "", ras_id: t.ras_id || "", mode: t.mode || "individu",
+    eartag: t.eartag || "", jenis_kelamin: t.jenis_kelamin || "", jml_deklarasi: t.jml_deklarasi ?? "",
+  })));
+  const koord = item.koordinat ? { lat: item.koordinat.coordinates[1], lng: item.koordinat.coordinates[0] } : null;
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  async function konfirmasi() {
+    setErr(null);
+    setBusy(true);
+    try {
+      const body = { ...f, ...wil, ternak: ternakDraftPayload(ternak) };
+      if (!body.nik) delete body.nik;
+      if (koord) body.koordinat = koord;
+      await jpost(`/pendaftaran/${item.id}/konfirmasi`, body);
+      onDone();
+    } catch (e) {
+      setErr(String(e.message || e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  async function tolak() {
+    if (!window.confirm("Tolak pendaftaran ini? Data tidak akan dibuat.")) return;
+    try {
+      await jpost(`/pendaftaran/${item.id}/tolak`, {});
+      onDone();
+    } catch (e) {
+      window.alert(e.message || e);
+    }
+  }
+
+  return (
+    <div style={{ display: "grid", gap: 14 }}>
+      <button style={btnGhost} onClick={onBack}>← Kembali ke antrian</button>
+      <div style={{ ...card, display: "grid", gap: 10, background: "#fafafa" }}>
+        <div style={{ display: "flex", justifyContent: "space-between" }}>
+          <strong>Verifikasi Pendaftaran</strong>
+          <span style={{ fontSize: 12, color: "#9a7b00" }}>sumber: {item.sumber || "—"}</span>
+        </div>
+        <input style={inp} placeholder="Nama *" value={f.nama} onChange={(e) => setF({ ...f, nama: e.target.value })} />
+        <input style={inp} placeholder="Kontak *" value={f.kontak} onChange={(e) => setF({ ...f, kontak: e.target.value })} />
+        <input style={inp} placeholder="NIK (opsional)" value={f.nik} onChange={(e) => setF({ ...f, nik: e.target.value })} />
+        <WilayahCascade value={wil} onChange={setWil} />
+        <input style={inp} placeholder="Alamat detail" value={f.alamat_detail} onChange={(e) => setF({ ...f, alamat_detail: e.target.value })} />
+        {item.catatan && <div style={{ fontSize: 13, color: "#666" }}>Catatan pemohon: {item.catatan}</div>}
+        {koord && <div style={{ fontSize: 13, color: "#0f6e56" }}>📍 Lokasi GPS terlampir</div>}
+        <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>Ternak</div>
+        <TernakDraftEditor items={ternak} onChange={setTernak} />
+        {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
+        <div style={{ display: "flex", gap: 8 }}>
+          <button style={btn} disabled={busy || !f.nama || !f.kontak} onClick={konfirmasi}>{busy ? "Memproses…" : "Konfirmasi & buat data"}</button>
+          <button style={{ ...btnGhost, color: "#c00", borderColor: "#e0b4b4" }} onClick={tolak}>Tolak</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PendaftaranPage({ onConfirmed }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [sel, setSel] = useState(null);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    jget("/pendaftaran?status=baru").then(setItems).catch(() => setItems([])).finally(() => setLoading(false));
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  if (sel) return <PendaftaranConfirm item={sel} onBack={() => setSel(null)} onDone={() => { setSel(null); load(); onConfirmed && onConfirmed(); }} />;
+
+  return (
+    <div style={{ display: "grid", gap: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <strong>Antrian Pendaftaran</strong>
+        <button style={btnGhost} onClick={load}>Muat ulang</button>
+      </div>
+      {loading ? <div style={{ color: "#888" }}>memuat…</div> : !items.length ? <div style={{ color: "#888" }}>Tidak ada pendaftaran menunggu.</div> : (
+        <div style={{ display: "grid", gap: 8 }}>
+          {items.map((d) => (
+            <div key={d.id} style={{ ...card, cursor: "pointer" }} onClick={() => setSel(d)}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <strong>{d.nama}</strong>
+                <span style={{ fontSize: 12, color: "#9a7b00" }}>{d.sumber || "—"}</span>
+              </div>
+              <div style={{ fontSize: 13, color: "#666" }}>{d.kontak}{d.ternak && d.ternak.length ? ` · ${d.ternak.length} ternak` : " · belum ada ternak"}</div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Shell({ user, onLogout }) {
   const [role, setRole] = useState(user.roles.length === 1 ? user.roles[0] : null);
   const [tab, setTab] = useState("peternak");
+  const [pendaftaranBaru, setPendaftaranBaru] = useState(0);
+  const refreshPendaftaran = useCallback(() => {
+    jget("/pendaftaran/count").then((d) => setPendaftaranBaru(d.baru || 0)).catch(() => {});
+  }, []);
+  useEffect(() => { if (role === "admin" || role === "petugas") refreshPendaftaran(); }, [role, refreshPendaftaran]);
   const judul = { admin: "Beranda Admin", petugas: "Beranda Petugas", peternak: "Beranda Peternak" };
 
   if (!role) {
@@ -1061,13 +1320,16 @@ function Shell({ user, onLogout }) {
       </div>
       {(role === "admin" || role === "petugas") ? (
         <>
-          <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
             <button style={tab === "peternak" ? btn : btnGhost} onClick={() => setTab("peternak")}>Peternak</button>
             <button style={tab === "obat" ? btn : btnGhost} onClick={() => setTab("obat")}>Obat</button>
+            <button style={tab === "pendaftaran" ? btn : btnGhost} onClick={() => { setTab("pendaftaran"); refreshPendaftaran(); }}>
+              Pendaftaran{pendaftaranBaru ? ` (${pendaftaranBaru})` : ""}
+            </button>
           </div>
-          {tab === "peternak"
-            ? <PeternakPage isAdmin={user.roles.includes("admin")} />
-            : <ObatPage isAdmin={user.roles.includes("admin")} />}
+          {tab === "peternak" && <PeternakPage isAdmin={user.roles.includes("admin")} />}
+          {tab === "obat" && <ObatPage isAdmin={user.roles.includes("admin")} />}
+          {tab === "pendaftaran" && <PendaftaranPage onConfirmed={refreshPendaftaran} />}
         </>
       ) : (
         <div style={{ ...card, color: "#888" }}>Beranda peternak menyusul di slice berikutnya.</div>
@@ -1096,6 +1358,15 @@ export default function App() {
   }
 
   if (loading) return <div style={{ padding: 24, fontFamily: "system-ui" }}>memuat…</div>;
+
+  const isDaftar = typeof window !== "undefined" && (window.location.hash || "").startsWith("#/daftar");
+  if (isDaftar) {
+    return (
+      <div style={{ fontFamily: "system-ui, sans-serif" }}>
+        <PublicDaftar />
+      </div>
+    );
+  }
 
   return (
     <div style={{ fontFamily: "system-ui, sans-serif" }}>
