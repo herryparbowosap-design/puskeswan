@@ -1174,19 +1174,23 @@ function ObatForm({ initial, onSaved, onCancel }) {
   const int = (v) => (v === "" || v === null ? null : parseInt(v, 10));
 
   async function onFotoLabel(e) {
-    const file = e.target.files?.[0];
+    const files = Array.from(e.target.files || []).slice(0, 5);
     e.target.value = "";
-    if (!file) return;
+    if (!files.length) return;
     setErr(null);
     setAiBusy(true);
     try {
-      const b64 = await new Promise((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res(String(r.result).split(",")[1]);
-        r.onerror = () => rej(new Error("gagal baca file"));
-        r.readAsDataURL(file);
-      });
-      const d = await jpost("/ai/baca-obat", { image_base64: b64, media_type: file.type || "image/jpeg" });
+      const images = [];
+      for (const file of files) {
+        const b64 = await new Promise((res, rej) => {
+          const r = new FileReader();
+          r.onload = () => res(String(r.result).split(",")[1]);
+          r.onerror = () => rej(new Error("gagal baca file"));
+          r.readAsDataURL(file);
+        });
+        images.push({ image_base64: b64, media_type: file.type || "image/jpeg" });
+      }
+      const d = await jpost("/ai/baca-obat", { images });
       const satuanOk = ["ml", "tablet", "bolus", "sachet", "kapsul", "gram"];
       const ruteOk = ["IM", "IV", "SC", "IM/IV", "oral", "topikal"];
       setF((p) => ({
@@ -1237,9 +1241,9 @@ function ObatForm({ initial, onSaved, onCancel }) {
       <div style={{ border: "1px dashed #d6a700", borderRadius: 10, padding: 10, background: "#fffdf5", display: "grid", gap: 6 }}>
         <label style={{ ...btnGhost, borderColor: "#d6a700", color: "#9a7b00", display: "block", textAlign: "center", cursor: aiBusy ? "default" : "pointer" }}>
           {aiBusy ? "Membaca label…" : "📷 Foto label obat — AI isi otomatis"}
-          <input type="file" accept="image/*" style={{ display: "none" }} onChange={onFotoLabel} disabled={aiBusy} />
+          <input type="file" accept="image/*" multiple style={{ display: "none" }} onChange={onFotoLabel} disabled={aiBusy} />
         </label>
-        <div style={{ fontSize: 11, color: "#999" }}>AI membaca yang tercetak di label. Periksa &amp; koreksi angka (konsentrasi/dosis) sebelum simpan.</div>
+        <div style={{ fontSize: 11, color: "#999" }}>Bisa pilih beberapa foto sekaligus (mis. sisi depan &amp; belakang). AI membaca yang tercetak di label &amp; menggabungkannya — periksa &amp; koreksi angka (konsentrasi/dosis) sebelum simpan.</div>
       </div>
       <input style={inp} placeholder="Nama dagang *" value={f.nama_dagang} onChange={(e) => setF({ ...f, nama_dagang: e.target.value })} />
       <input style={inp} placeholder="Zat aktif (mis. Oksitetrasiklin)" value={f.zat_aktif} onChange={(e) => setF({ ...f, zat_aktif: e.target.value })} />
