@@ -6,8 +6,10 @@ kategori pelayanan lain ditambahkan."""
 from datetime import datetime, timezone
 from typing import Optional
 from collections import Counter, defaultdict
+import io
 
 from fastapi import APIRouter, Depends
+from fastapi.responses import Response
 
 from db import get_db
 from auth import require_roles
@@ -32,7 +34,10 @@ async def laporan_bulanan(
     kalurahan_id: Optional[str] = None,
     _user=Depends(require_roles("petugas", "admin")),
 ):
-    db = get_db()
+    return await _hitung_rekap(get_db(), tahun, bulan, kalurahan_id)
+
+
+async def _hitung_rekap(db, tahun: int, bulan: int, kalurahan_id: Optional[str] = None):
     s_dari, s_sampai = _range_str(tahun, bulan)
     d_dari, d_sampai = _range_dt(tahun, bulan)
 
@@ -112,3 +117,108 @@ async def laporan_bulanan(
         "peternak_baru": pet_baru,
         "pendaftaran": {"baru": daftar_baru, "dikonfirmasi": daftar_konf},
     }
+
+
+# ---------------------------------------------------------------------------
+# Ekspor Excel (.xlsx) multi-sheet — rapi, dekat dengan template laporan.
+# ---------------------------------------------------------------------------
+def _build_xlsx(rekap: dict) -> bytes:
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment
+
+    HDR_FONT = Font(bold=True, color="FFFFFF")
+    HDR_FILL = PatternFill("solid", fgColor="0F6E56")
+    TITLE = Font(bold=True, size=14)
+    SUB = Font(color="666666")
+
+    pel = rekap["pelayanan"]
+    bulan_nama = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                  "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+    periode_txt = f"{bulan_nama[rekap['periode']['bulan']]} {rekap['periode']['tahun']}"
+
+    def header_row(ws, row, cols):
+        for j, c in enumerate(cols, start=1):
+            cell = ws.cell(row=row, column=j, value=c)
+            cell.font = HDR_FONT
+            cell.fill = HDR_FILL
+            cell.alignment = Alignment(horizontal="left")
+
+    def autowidth(ws):
+        for col in ws.columns:
+            width = max((len(str(c.value)) for c in col if c.value is not None), default=8)
+            ws.column_dimensions[col[0].column_letter].width = min(max(width + 2, 10), 50)
+
+    wb = Workbook()
+
+    # --- Ringkasan ---
+    ws = wb.active
+    ws.title = "Ringkasan"
+    ws["A1"] = "REKAP BULANAN PUSKESWAN"
+    ws["A1"].font = TITLE
+    ws["A2"] = f"Periode: {periode_txt}"
+    ws["A2"].font = SUB
+    r = 4
+    header_row(ws, r, ["Ringkasan", "Nilai"]); r += 1
+    for label, val in [
+        ("Total pelayanan", pel["total"]),
+        ("Peternak baru", rekap["peternak_baru"]),
+        ("Pendaftaran baru", rekap["pendaftaran"]["baru"]),
+        ("Pendaftaran dikonfirmasi", rekap["pendaftaran"]["dikonfirmasi"]),
+        ("Kematian ternak", rekap["ternak_mutasi"].get("mati", 0)),
+    ]:
+        ws.cell(row=r, column=1, value=label)
+        ws.cell(row=r, column=2, value=val)
+        r += 1
+    r += 1
+    for judul, data in [
+        ("Per kategori", pel["per_kategori"]),
+        ("Per metode", pel["per_metode"]),
+        ("Per prognosa", pel["per_prognosa"]),
+        ("Mutasi ternak", rekap["ternak_mutasi"]),
+    ]:
+        header_row(ws, r, [judul, "Jumlah"]); r += 1
+        for k, v in (data or {}).items():
+            ws.cell(row=r, column=1, value=k)
+            ws.cell(row=r, column=2, value=v)
+            r += 1
+        r += 1
+    autowidth(ws)
+
+    # --- sheet tabel ---
+    def sheet_tabel(nama, kolom, baris):
+        s = wb.create_sheet(nama)
+        header_row(s, 1, kolom)
+        for i, b in enumerate(baris, start=2):
+            for j, c in enumerate(b, start=1):
+                s.cell(row=i, column=j, value=c)
+        autowidth(s)
+
+    sheet_tabel("Penyakit", ["Kode", "Nama", "Jumlah"],
+                [[x["kode"], x["nama"], x["jumlah"]] for x in pel["per_penyakit"]])
+    sheet_tabel("Wilayah", ["Kalurahan", "Jumlah"],
+                [[x["nama"], x["jumlah"]] for x in pel["per_wilayah"]])
+    sheet_tabel("Petugas", ["Petugas", "Jumlah"],
+                [[x["nama"], x["jumlah"]] for x in pel["per_petugas"]])
+    sheet_tabel("Obat", ["Obat", "Jumlah", "Satuan"],
+                [[x["nama"], x["jumlah"], x["satuan"]] for x in rekap["obat"]])
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
+
+
+@router.get("/bulanan/xlsx")
+async def laporan_bulanan_xlsx(
+    tahun: int,
+    bulan: int,
+    kalurahan_id: Optional[str] = None,
+    _user=Depends(require_roles("petugas", "admin")),
+):
+    rekap = await _hitung_rekap(get_db(), tahun, bulan, kalurahan_id)
+    data = _build_xlsx(rekap)
+    fname = f"rekap-{tahun:04d}-{bulan:02d}.xlsx"
+    return Response(
+        content=data,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{fname}"'},
+    )
