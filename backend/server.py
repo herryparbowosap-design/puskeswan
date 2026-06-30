@@ -24,6 +24,7 @@ import pendaftaran
 import laporan
 import qr
 import kegiatan
+import wa_petugas
 import wa_webhook
 from auth import router as auth_router, admin_router
 
@@ -90,4 +91,5 @@ app.include_router(pendaftaran.router, prefix="/api")
 app.include_router(laporan.router, prefix="/api")
 app.include_router(qr.router, prefix="/api")
 app.include_router(kegiatan.router, prefix="/api")
+app.include_router(wa_petugas.router, prefix="/api")
 app.include_router(wa_webhook.router, prefix="/api")
