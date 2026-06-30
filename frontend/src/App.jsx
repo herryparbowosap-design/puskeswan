@@ -1548,7 +1548,8 @@ function PendaftaranConfirm({ item, onBack, onDone }) {
       const body = { ...f, ...wil, ternak: ternakDraftPayload(ternak) };
       if (!body.nik) delete body.nik;
       if (koord) body.koordinat = koord;
-      await jpost(`/pendaftaran/${item.id}/konfirmasi`, body);
+      const res = await jpost(`/pendaftaran/${item.id}/konfirmasi`, body);
+      if (res?.wa?.status === "gagal") window.alert("Peternak berhasil dikonfirmasi, tetapi notifikasi WhatsApp GAGAL terkirim. Cek konfigurasi WA / nomor peternak.");
       onDone();
     } catch (e) {
       setErr(String(e.message || e));
@@ -1559,7 +1560,8 @@ function PendaftaranConfirm({ item, onBack, onDone }) {
   async function tolak() {
     if (!window.confirm("Tolak pendaftaran ini? Data tidak akan dibuat.")) return;
     try {
-      await jpost(`/pendaftaran/${item.id}/tolak`, {});
+      const res = await jpost(`/pendaftaran/${item.id}/tolak`, {});
+      if (res?.wa?.status === "gagal") window.alert("Pendaftaran ditolak, tetapi notifikasi WhatsApp GAGAL terkirim.");
       onDone();
     } catch (e) {
       window.alert(e.message || e);
