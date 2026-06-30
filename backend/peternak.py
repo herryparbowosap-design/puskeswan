@@ -63,3 +63,52 @@ async def get_peternak(pid: str, _user=Depends(current_user)):
     if not p:
         raise HTTPException(404, "peternak tidak ditemukan")
     return p
+
+
+class PeternakPatch(BaseModel):
+    nama: Optional[str] = None
+    kontak: Optional[str] = None
+    nik: Optional[str] = None
+    kapanewon_id: Optional[str] = None
+    kalurahan_id: Optional[str] = None
+    padukuhan_id: Optional[str] = None
+    alamat_detail: Optional[str] = None
+    koordinat: Optional[KoordinatIn] = None
+    catatan: Optional[str] = None
+
+
+@router.patch("/{pid}")
+async def update_peternak(pid: str, body: PeternakPatch, user=Depends(require_roles("petugas", "admin"))):
+    db = get_db()
+    upd = body.model_dump(exclude_unset=True)
+    if "koordinat" in upd:
+        upd["koordinat"] = (
+            {"type": "Point", "coordinates": [body.koordinat.lng, body.koordinat.lat]}
+            if body.koordinat else None
+        )
+    if not upd:
+        raise HTTPException(400, "tidak ada perubahan")
+    upd["updated_at"] = datetime.now(timezone.utc)
+    r = await db.peternak.update_one({"id": pid}, {"$set": upd})
+    if r.matched_count == 0:
+        raise HTTPException(404, "peternak tidak ditemukan")
+    return await db.peternak.find_one({"id": pid}, {"_id": 0})
+
+
+@router.delete("/{pid}")
+async def delete_peternak(pid: str, cascade: bool = False, _user=Depends(require_roles("admin"))):
+    db = get_db()
+    if not await db.peternak.find_one({"id": pid}):
+        raise HTTPException(404, "peternak tidak ditemukan")
+    n_ternak = await db.ternak.count_documents({"peternak_id": pid})
+    n_pel = await db.pelayanan.count_documents({"peternak.peternak_id": pid})
+    if (n_ternak or n_pel) and not cascade:
+        raise HTTPException(409, f"Peternak punya {n_ternak} ternak & {n_pel} pelayanan. Hapus paksa untuk menghapus semuanya.")
+    if cascade:
+        tids = [t["id"] for t in await db.ternak.find({"peternak_id": pid}, {"id": 1}).to_list(5000)]
+        if tids:
+            await db.mutasi_ternak.delete_many({"ternak_id": {"$in": tids}})
+        await db.ternak.delete_many({"peternak_id": pid})
+        await db.pelayanan.delete_many({"peternak.peternak_id": pid})
+    await db.peternak.delete_one({"id": pid})
+    return {"ok": True, "dihapus": {"peternak": 1, "ternak": n_ternak if cascade else 0, "pelayanan": n_pel if cascade else 0}}
