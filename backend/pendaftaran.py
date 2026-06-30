@@ -17,6 +17,7 @@ from pydantic import BaseModel
 
 from db import get_db
 from auth import require_roles
+import notifikasi
 import peternak as peternak_mod
 import ternak as ternak_mod
 
@@ -149,15 +150,19 @@ async def konfirmasi(pid: str, body: KonfirmasiIn, user=Depends(require_roles("p
         "status": "dikonfirmasi", "peternak_id": p["id"],
         "dikonfirmasi_oleh": user["id"], "dikonfirmasi_pada": datetime.now(timezone.utc),
     }})
-    return {"ok": True, "peternak": p, "ternak_dibuat": n_ternak}
+    wa = await notifikasi.kirim_notif_pendaftaran(body.kontak, body.nama, "konfirmasi")
+    return {"ok": True, "peternak": p, "ternak_dibuat": n_ternak, "wa": wa}
 
 
 @router.post("/{pid}/tolak")
 async def tolak(pid: str, user=Depends(require_roles("petugas", "admin"))):
-    r = await get_db().pendaftaran.update_one(
-        {"id": pid, "status": {"$ne": "dikonfirmasi"}},
+    db = get_db()
+    d = await db.pendaftaran.find_one({"id": pid})
+    if not d or d.get("status") == "dikonfirmasi":
+        raise HTTPException(404, "pendaftaran tidak ditemukan / sudah dikonfirmasi")
+    await db.pendaftaran.update_one(
+        {"id": pid},
         {"$set": {"status": "ditolak", "ditolak_oleh": user["id"], "ditolak_pada": datetime.now(timezone.utc)}},
     )
-    if r.matched_count == 0:
-        raise HTTPException(404, "pendaftaran tidak ditemukan / sudah dikonfirmasi")
-    return {"ok": True, "status": "ditolak"}
+    wa = await notifikasi.kirim_notif_pendaftaran(d.get("kontak"), d.get("nama"), "tolak")
+    return {"ok": True, "status": "ditolak", "wa": wa}
