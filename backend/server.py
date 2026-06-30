@@ -39,6 +39,7 @@ async def lifespan(app: FastAPI):
     await get_client().admin.command("ping")
     await ensure_indexes(get_db())
     await seed.seed_master_if_empty()
+    await seed.seed_ras_upsert()
     await seed.seed_wilayah_if_empty()
     await seed.seed_admin_if_missing()
     yield
