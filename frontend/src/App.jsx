@@ -70,6 +70,12 @@ function hitungUmur(tgl) {
   return `${th} th ${bl} bln`;
 }
 
+function hitungDosis(o, beratKg) {
+  if (!o || !o.dosis_per_kg || !o.konsentrasi || !beratKg || beratKg <= 0) return null;
+  const v = (o.dosis_per_kg * beratKg) / o.konsentrasi;
+  return Math.round(v * 100) / 100;
+}
+
 function Login({ onLogin }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -386,9 +392,17 @@ function PenyakitPicker({ value, onChange }) {
 
 function PelayananForm({ peternak, onCreated, onCancel }) {
   const [f, setF] = useState({
-    tgl: new Date().toISOString().slice(0, 10), jenis_hewan: "", jumlah: 1,
+    tgl: new Date().toISOString().slice(0, 10), jumlah: 1,
     diagnosa_teks: "", tindakan: "", prognosa: "", metode_layanan: "Kunjungan Lapangan", keterangan: "",
   });
+  const [ternakList, setTernakList] = useState([]);
+  const [ternakSel, setTernakSel] = useState("");      // id ternak | "lainnya" | ""
+  const [jenisManual, setJenisManual] = useState("");
+  const [berat, setBerat] = useState("");
+  const [obatList, setObatList] = useState([]);
+  const [obatSel, setObatSel] = useState("");
+  const [obatJml, setObatJml] = useState("");
+  const [obatDipakai, setObatDipakai] = useState([]);
   const [penyakit, setPenyakit] = useState(null);
   const [foto, setFoto] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -398,12 +412,26 @@ function PelayananForm({ peternak, onCreated, onCancel }) {
   const [aiBusy, setAiBusy] = useState(false);
   const [usulan, setUsulan] = useState([]);
 
+  useEffect(() => {
+    jget(`/ternak?peternak_id=${peternak.id}`).then(setTernakList).catch(() => {});
+    jget("/obat").then(setObatList).catch(() => {});
+  }, [peternak.id]);
+
+  const ternakLabel = (t) =>
+    `${t.spesies}${t.eartag ? " · " + t.eartag : ""}` +
+    `${t.mode === "populasi" && t.jml_deklarasi ? " · " + t.jml_deklarasi + " ekor" : ""}` +
+    `${t.jenis_kelamin ? " · " + t.jenis_kelamin : ""}`;
+  const ternakObj = ternakSel && ternakSel !== "lainnya" ? ternakList.find((x) => x.id === ternakSel) : null;
+  const jenisHewan = ternakObj ? ternakLabel(ternakObj) : jenisManual;
+  const obatPilih = obatList.find((o) => o.id === obatSel) || null;
+  const saranDosis = hitungDosis(obatPilih, parseFloat(berat));
+
   async function runAI() {
     if (aiTeks.trim().length < 5) { setErr("Tulis catatan lapangan dulu untuk dianalisa AI."); return; }
     setErr(null);
     setAiBusy(true);
     try {
-      const r = await jpost("/ai/saran", { teks: aiTeks, jenis_hewan: f.jenis_hewan || undefined });
+      const r = await jpost("/ai/saran", { teks: aiTeks, jenis_hewan: jenisHewan || undefined });
       setF((prev) => ({
         ...prev,
         diagnosa_teks: r.diagnosa_teks || prev.diagnosa_teks,
@@ -436,6 +464,20 @@ function PelayananForm({ peternak, onCreated, onCancel }) {
     }
   }
 
+  function tambahObat() {
+    if (!obatPilih || !obatJml) return;
+    const jml = parseFloat(obatJml);
+    const pakaiSaran = saranDosis != null && Math.abs(jml - saranDosis) < 0.001;
+    setObatDipakai((prev) => [...prev, {
+      obat_id: obatPilih.id,
+      nama: obatPilih.nama_dagang,
+      jumlah: jml,
+      satuan: obatPilih.satuan,
+      catatan: pakaiSaran ? `${obatPilih.dosis_per_kg} mg/kg × ${berat} kg ÷ ${obatPilih.konsentrasi} mg/${obatPilih.satuan}` : undefined,
+    }]);
+    setObatSel(""); setObatJml("");
+  }
+
   async function submit() {
     setErr(null);
     setBusy(true);
@@ -448,7 +490,17 @@ function PelayananForm({ peternak, onCreated, onCancel }) {
       if (f.prognosa) body.prognosa = f.prognosa;
       if (f.metode_layanan) body.metode_layanan = f.metode_layanan;
       if (f.keterangan) body.keterangan = f.keterangan;
-      if (f.jenis_hewan) body.hewan = { jenis_hewan: f.jenis_hewan, jumlah: parseInt(f.jumlah, 10) || 1 };
+      if (ternakObj) {
+        body.hewan = {
+          ternak_id: ternakObj.id,
+          jenis_hewan: ternakLabel(ternakObj),
+          jumlah: ternakObj.mode === "populasi" && ternakObj.jml_deklarasi ? ternakObj.jml_deklarasi : 1,
+        };
+      } else if (jenisManual) {
+        body.hewan = { jenis_hewan: jenisManual, jumlah: parseInt(f.jumlah, 10) || 1 };
+      }
+      if (berat) body.berat_kg = parseFloat(berat);
+      if (obatDipakai.length) body.obat = obatDipakai;
       if (foto.length) body.foto = foto.map((x) => ({ key: x.key, content_type: x.content_type }));
       const rec = await jpost("/pelayanan", body);
       onCreated(rec);
@@ -463,10 +515,25 @@ function PelayananForm({ peternak, onCreated, onCancel }) {
     <div style={{ ...card, display: "grid", gap: 10, background: "#fafafa" }}>
       <strong>Catat Pelayanan (KESWAN)</strong>
       <input style={inp} type="date" value={f.tgl} onChange={(e) => setF({ ...f, tgl: e.target.value })} />
-      <div style={{ display: "flex", gap: 8 }}>
-        <input style={inp} placeholder="Jenis hewan (mis. Sapi PFH)" value={f.jenis_hewan} onChange={(e) => setF({ ...f, jenis_hewan: e.target.value })} />
-        <input style={{ ...inp, width: 90 }} type="number" min="1" placeholder="Jml" value={f.jumlah} onChange={(e) => setF({ ...f, jumlah: e.target.value })} />
-      </div>
+
+      <label style={{ fontSize: 13, color: "#666", display: "grid", gap: 4 }}>
+        Hewan yang dilayani
+        <select style={inp} value={ternakSel} onChange={(e) => setTernakSel(e.target.value)}>
+          <option value="">— Pilih ternak terdaftar —</option>
+          {ternakList.map((t) => <option key={t.id} value={t.id}>{ternakLabel(t)}</option>)}
+          <option value="lainnya">Lainnya (ketik manual)</option>
+        </select>
+      </label>
+      {ternakSel === "lainnya" && (
+        <div style={{ display: "flex", gap: 8 }}>
+          <input style={inp} placeholder="Jenis hewan (mis. Ayam kampung)" value={jenisManual} onChange={(e) => setJenisManual(e.target.value)} />
+          <input style={{ ...inp, width: 90 }} type="number" min="1" placeholder="Jml" value={f.jumlah} onChange={(e) => setF({ ...f, jumlah: e.target.value })} />
+        </div>
+      )}
+      <label style={{ fontSize: 13, color: "#666", display: "grid", gap: 4 }}>
+        Berat badan (kg) — untuk hitung dosis
+        <input style={inp} type="number" min="0" step="0.1" placeholder="mis. 300" value={berat} onChange={(e) => setBerat(e.target.value)} />
+      </label>
 
       <div style={{ border: "1px dashed #d6a700", borderRadius: 10, padding: 12, background: "#fffdf5", display: "grid", gap: 8 }}>
         <div style={{ fontSize: 13, color: "#9a7b00", fontWeight: 500 }}>✨ Bantuan AI (opsional)</div>
@@ -496,7 +563,49 @@ function PelayananForm({ peternak, onCreated, onCancel }) {
         <div style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>Kode iSIKHNAS (opsional)</div>
         <PenyakitPicker value={penyakit} onChange={setPenyakit} />
       </div>
-      <textarea style={{ ...inp, minHeight: 50, fontFamily: "inherit" }} placeholder="Tindakan / pengobatan" value={f.tindakan} onChange={(e) => setF({ ...f, tindakan: e.target.value })} />
+      <textarea style={{ ...inp, minHeight: 50, fontFamily: "inherit" }} placeholder="Tindakan / pengobatan (teks)" value={f.tindakan} onChange={(e) => setF({ ...f, tindakan: e.target.value })} />
+
+      <div style={{ border: "1px solid #e3e3e3", borderRadius: 10, padding: 12, display: "grid", gap: 8 }}>
+        <div style={{ fontSize: 13, color: "#444", fontWeight: 500 }}>💊 Obat dipakai (opsional)</div>
+        {obatDipakai.length > 0 && (
+          <div style={{ display: "grid", gap: 6 }}>
+            {obatDipakai.map((o, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontSize: 14, background: "#f6f6f6", borderRadius: 8, padding: "6px 10px" }}>
+                <span>{o.nama} — <strong>{o.jumlah} {o.satuan}</strong>{o.catatan ? <span style={{ color: "#999", fontSize: 12 }}> · {o.catatan}</span> : null}</span>
+                <button type="button" onClick={() => setObatDipakai((p) => p.filter((_, j) => j !== i))}
+                  style={{ ...btnGhost, padding: "2px 8px", fontSize: 12, color: "#c00", borderColor: "#e0b4b4" }}>Hapus</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <select style={{ ...inp, flex: "1 1 160px" }} value={obatSel} onChange={(e) => setObatSel(e.target.value)}>
+            <option value="">— Pilih obat —</option>
+            {obatList.map((o) => <option key={o.id} value={o.id}>{o.nama_dagang}</option>)}
+          </select>
+          <input style={{ ...inp, width: 90 }} type="number" min="0" step="0.1" placeholder="Jumlah" value={obatJml} onChange={(e) => setObatJml(e.target.value)} />
+          <span style={{ alignSelf: "center", color: "#666", fontSize: 14, minWidth: 36 }}>{obatPilih ? obatPilih.satuan : ""}</span>
+          <button type="button" style={btnGhost} disabled={!obatPilih || !obatJml} onClick={tambahObat}>+ Tambah</button>
+        </div>
+        {obatPilih && (
+          <div style={{ fontSize: 12, color: "#666" }}>
+            {saranDosis != null ? (
+              <span>
+                Saran dosis: <strong>{saranDosis} {obatPilih.satuan}</strong> ({obatPilih.dosis_per_kg} mg/kg × {berat} kg ÷ {obatPilih.konsentrasi} mg/{obatPilih.satuan}) — periksa dulu.{" "}
+                <button type="button" onClick={() => setObatJml(String(saranDosis))} style={{ ...btnGhost, padding: "1px 8px", fontSize: 12, borderColor: "#0f6e56", color: "#0f6e56" }}>Pakai</button>
+              </span>
+            ) : (
+              <span style={{ color: "#999" }}>
+                {!berat ? "Isi berat badan untuk saran dosis otomatis." : (!obatPilih.dosis_per_kg || !obatPilih.konsentrasi) ? "Obat ini belum punya dosis/konsentrasi acuan — isi jumlah manual." : ""}
+              </span>
+            )}
+            {obatPilih.waktu_henti_daging_hari != null && (
+              <div style={{ color: "#a33", marginTop: 2 }}>⚠ Waktu henti: daging {obatPilih.waktu_henti_daging_hari} hari{obatPilih.waktu_henti_susu_jam != null ? `, susu ${obatPilih.waktu_henti_susu_jam} jam` : ""}.</div>
+            )}
+          </div>
+        )}
+      </div>
+
       <div style={{ display: "flex", gap: 8 }}>
         <select style={inp} value={f.prognosa} onChange={(e) => setF({ ...f, prognosa: e.target.value })}>
           <option value="">— Prognosa —</option>
@@ -510,7 +619,7 @@ function PelayananForm({ peternak, onCreated, onCancel }) {
       <input style={inp} placeholder="Keterangan (opsional)" value={f.keterangan} onChange={(e) => setF({ ...f, keterangan: e.target.value })} />
 
       <div>
-        <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>Foto kasus (opsional)</div>
+        <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>Foto kasus (opsional, bisa lebih dari 1)</div>
         {foto.length > 0 && (
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
             {foto.map((x, i) => (
@@ -534,19 +643,6 @@ function PelayananForm({ peternak, onCreated, onCancel }) {
         <button style={btnGhost} onClick={onCancel}>Batal</button>
       </div>
     </div>
-  );
-}
-
-function FotoThumb({ fotoKey }) {
-  const [url, setUrl] = useState(null);
-  useEffect(() => {
-    jget(`/foto/url?key=${encodeURIComponent(fotoKey)}`).then((d) => setUrl(d.url)).catch(() => {});
-  }, [fotoKey]);
-  if (!url) return <div style={{ width: 56, height: 56, borderRadius: 8, background: "#eee" }} />;
-  return (
-    <a href={url} target="_blank" rel="noreferrer">
-      <img src={url} alt="" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8, border: "1px solid #ddd" }} />
-    </a>
   );
 }
 
@@ -587,6 +683,10 @@ function PelayananList({ peternakId, refreshKey, isAdmin }) {
           {p.hewan && <div style={{ fontSize: 13, color: "#666" }}>{p.hewan.jenis_hewan} · {p.hewan.jumlah} ekor</div>}
           {p.diagnosa_teks && <div style={{ fontSize: 14, marginTop: 4 }}>Dx: {p.diagnosa_teks}</div>}
           {p.tindakan && <div style={{ fontSize: 14 }}>Tx: {p.tindakan}</div>}
+          {p.berat_kg ? <div style={{ fontSize: 13, color: "#666" }}>BB: {p.berat_kg} kg</div> : null}
+          {p.obat && p.obat.length > 0 && (
+            <div style={{ fontSize: 14 }}>Obat: {p.obat.map((o) => `${o.nama} ${o.jumlah} ${o.satuan}`).join(", ")}</div>
+          )}
           {p.foto && p.foto.length > 0 && (
             <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
               {p.foto.map((x) => <FotoThumb key={x.key} fotoKey={x.key} />)}
