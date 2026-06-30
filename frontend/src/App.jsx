@@ -2119,6 +2119,81 @@ function KegiatanPage({ isAdmin }) {
   );
 }
 
+function WaPetugasPage() {
+  const [items, setItems] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState("");
+  const [no, setNo] = useState("");
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    Promise.all([
+      jget("/wa-petugas").catch(() => []),
+      jget("/admin/users").catch(() => []),
+    ]).then(([w, u]) => {
+      setItems(w);
+      setUsers(u.filter((x) => (x.roles || []).some((r) => r === "petugas" || r === "admin")));
+    }).finally(() => setLoading(false));
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  async function tambah() {
+    setErr(null);
+    if (!userId || !no.trim()) { setErr("Pilih petugas & isi nomor WA."); return; }
+    setBusy(true);
+    try {
+      await jpost("/wa-petugas", { user_id: userId, no: no.trim() });
+      setUserId(""); setNo("");
+      load();
+    } catch (e) { setErr(String(e.message || e)); } finally { setBusy(false); }
+  }
+  async function toggle(it) {
+    try { await jpatch(`/wa-petugas/${it.id}?aktif=${!it.aktif}`, {}); load(); } catch (e) { window.alert(e.message || e); }
+  }
+  async function hapus(it) {
+    if (!window.confirm(`Hapus nomor WA petugas ${it.nama}?`)) return;
+    try { await jdel(`/wa-petugas/${it.id}`); load(); } catch (e) { window.alert(e.message || e); }
+  }
+
+  return (
+    <div style={{ display: "grid", gap: 14 }}>
+      <div style={{ ...card, display: "grid", gap: 10 }}>
+        <strong>Daftarkan nomor WA petugas</strong>
+        <div style={{ fontSize: 13, color: "#666" }}>Nomor yang terdaftar akan dikenali sebagai petugas saat chat ke WA Puskeswan (bukan alur pendaftaran peternak). Setiap entri via WA diatribusikan ke akun ini.</div>
+        <select style={inp} value={userId} onChange={(e) => setUserId(e.target.value)}>
+          <option value="">— Pilih petugas —</option>
+          {users.map((u) => <option key={u.id} value={u.id}>{u.nama} ({u.username}) · {(u.roles || []).join("/")}</option>)}
+        </select>
+        <input style={inp} placeholder="No. WA (mis. 081328105535)" value={no} onChange={(e) => setNo(e.target.value)} />
+        {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
+        <button style={btn} disabled={busy} onClick={tambah}>{busy ? "Menyimpan…" : "Daftarkan nomor"}</button>
+      </div>
+
+      {loading ? <div style={{ color: "#888" }}>Memuat…</div> : items.length === 0 ? (
+        <div style={{ ...card, color: "#888" }}>Belum ada nomor petugas terdaftar.</div>
+      ) : (
+        <div style={{ display: "grid", gap: 8 }}>
+          {items.map((it) => (
+            <div key={it.id} style={{ ...card, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <div>
+                <div style={{ fontWeight: 600 }}>{it.nama} <span style={{ fontSize: 12, color: "#999" }}>({it.username})</span></div>
+                <div style={{ fontSize: 13, color: "#666" }}>{it.no}{!it.aktif && <span style={{ color: "#c00" }}> · nonaktif</span>}</div>
+              </div>
+              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                <button style={btnGhost} onClick={() => toggle(it)}>{it.aktif ? "Nonaktifkan" : "Aktifkan"}</button>
+                <button style={{ ...btnGhost, color: "#c00", borderColor: "#e0b4b4" }} onClick={() => hapus(it)}>Hapus</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Shell({ user, onLogout }) {
   const [role, setRole] = useState(user.roles.length === 1 ? user.roles[0] : null);
   const [tab, setTab] = useState("peternak");
@@ -2170,6 +2245,7 @@ function Shell({ user, onLogout }) {
             <button style={tab === "kegiatan" ? btn : btnGhost} onClick={() => setTab("kegiatan")}>Kegiatan</button>
             <button style={tab === "laporan" ? btn : btnGhost} onClick={() => setTab("laporan")}>Laporan</button>
             <button style={tab === "qr" ? btn : btnGhost} onClick={() => setTab("qr")}>QR</button>
+            {role === "admin" && <button style={tab === "wa" ? btn : btnGhost} onClick={() => setTab("wa")}>WA Petugas</button>}
           </div>
           {tab === "peternak" && <PeternakPage isAdmin={user.roles.includes("admin")} />}
           {tab === "obat" && <ObatPage isAdmin={user.roles.includes("admin")} />}
@@ -2177,6 +2253,7 @@ function Shell({ user, onLogout }) {
           {tab === "kegiatan" && <KegiatanPage isAdmin={user.roles.includes("admin")} />}
           {tab === "laporan" && <LaporanPage />}
           {tab === "qr" && <QRGenerator />}
+          {tab === "wa" && role === "admin" && <WaPetugasPage />}
         </>
       ) : (
         <div style={{ ...card, color: "#888" }}>Beranda peternak menyusul di slice berikutnya.</div>
