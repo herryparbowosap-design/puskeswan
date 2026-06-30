@@ -24,6 +24,7 @@ from fastapi import APIRouter, Request, Response
 from db import get_db
 import notifikasi
 import pendaftaran as pendaftaran_mod
+from wa_petugas import cari_petugas_by_no
 
 router = APIRouter(prefix="/wa", tags=["wa"])
 
@@ -81,6 +82,29 @@ async def _cocokkan_kalurahan(db, teks):
         {"_id": 0, "id": 1, "nama": 1, "parent_id": 1},
     )
     return w
+
+
+async def _proses_petugas(db, petugas, wa_id, teks):
+    """Jalur PETUGAS (Fase A) — kenali identitas + menu + perintah aman 'status'.
+    Alur catat peternak/ternak/pelayanan (Fase B/C) akan menempel di sini nanti.
+    Tidak ada AI & tidak ada data medis di fase ini."""
+    low = (teks or "").lower().strip()
+    nama = petugas.get("nama") or "Petugas"
+
+    if low in ("status", "antrian"):
+        n_baru = await db.pendaftaran.count_documents({"status": "baru"})
+        n_peternak = await db.peternak.count_documents({})
+        return (f"📊 *Status Puskeswan Godean*\n"
+                f"• Pendaftaran menunggu verifikasi: *{n_baru}*\n"
+                f"• Total peternak terdaftar: *{n_peternak}*\n\n"
+                f"_Ketik *menu* untuk pilihan lain._")
+
+    # default: sapaan + menu
+    return (f"Halo *{nama}* 👋 (petugas terverifikasi).\n"
+            f"Jalur petugas via WhatsApp.\n\n"
+            f"Yang tersedia sekarang:\n"
+            f"• *status* — lihat antrian & jumlah peternak\n\n"
+            f"_Segera hadir: catat peternak/ternak & pelayanan langsung dari sini._")
 
 
 async def _proses(db, wa_id, nama_profil, teks):
@@ -206,7 +230,11 @@ async def terima(request: Request):
         balasan = "Mohon kirim *teks*. Ketik *daftar* untuk memulai pendaftaran Puskeswan Godean."
     else:
         try:
-            balasan = await _proses(db, wa_id, nama_profil, teks)
+            petugas = await cari_petugas_by_no(db, wa_id)
+            if petugas:
+                balasan = await _proses_petugas(db, petugas, wa_id, teks)
+            else:
+                balasan = await _proses(db, wa_id, nama_profil, teks)
         except Exception:
             balasan = f"Maaf, terjadi kendala. Coba lagi atau hubungi {KONTAK}."
 
