@@ -390,7 +390,214 @@ function PenyakitPicker({ value, onChange }) {
   );
 }
 
+const PELAYANAN_KATEGORI = ["KESWAN", "VAKSINASI", "PKB", "GANGREP", "IB", "LAB", "DESINFEKSI", "PEMBINAAN", "KONSULTASI", "ADUAN"];
+const KATEGORI_LABEL = {
+  KESWAN: "KESWAN (pengobatan)", VAKSINASI: "Vaksinasi", PKB: "PKB (kebuntingan)",
+  GANGREP: "Gangguan reproduksi", IB: "Inseminasi buatan", LAB: "Laboratorium",
+  DESINFEKSI: "Desinfeksi", PEMBINAAN: "Pembinaan", KONSULTASI: "Konsultasi", ADUAN: "Aduan",
+};
+const DETAIL_FIELDS = {
+  VAKSINASI: [{ key: "jenis_vaksin", label: "Jenis vaksin (mis. SE, Brucella, Rabies, ND)", type: "text" }, { key: "jumlah_dosis", label: "Jumlah dosis", type: "number" }],
+  PKB: [{ key: "hasil", label: "Hasil PKB", type: "select", options: ["Bunting", "Tidak bunting", "Meragukan"] }, { key: "umur_kebuntingan_bln", label: "Umur kebuntingan (bulan)", type: "number" }],
+  GANGREP: [{ key: "jenis_gangguan", label: "Jenis gangguan reproduksi", type: "text" }],
+  IB: [{ key: "kode_pejantan", label: "Kode pejantan / straw", type: "text" }, { key: "ke", label: "IB ke-", type: "number" }],
+  LAB: [{ key: "jenis_sampel", label: "Jenis sampel", type: "text" }, { key: "pemeriksaan", label: "Jenis pemeriksaan", type: "text" }, { key: "hasil", label: "Hasil", type: "text" }],
+  DESINFEKSI: [{ key: "lokasi", label: "Lokasi / kandang", type: "text" }, { key: "cakupan", label: "Luas / volume", type: "text" }],
+  PEMBINAAN: [{ key: "topik", label: "Topik pembinaan", type: "text" }, { key: "jml_peserta", label: "Jumlah peserta", type: "number" }],
+  KONSULTASI: [{ key: "topik", label: "Topik konsultasi", type: "text" }],
+  ADUAN: [{ key: "jenis_aduan", label: "Jenis aduan", type: "text" }],
+};
+
 function PelayananForm({ peternak, onCreated, onCancel }) {
+  const [kategori, setKategori] = useState("KESWAN");
+  return (
+    <div style={{ display: "grid", gap: 10 }}>
+      <div style={{ ...card, background: "#fafafa", display: "grid", gap: 6 }}>
+        <div style={{ fontSize: 13, color: "#666" }}>Kategori kegiatan</div>
+        <select style={inp} value={kategori} onChange={(e) => setKategori(e.target.value)}>
+          {PELAYANAN_KATEGORI.map((k) => <option key={k} value={k}>{KATEGORI_LABEL[k] || k}</option>)}
+        </select>
+      </div>
+      {kategori === "KESWAN"
+        ? <PelayananKeswanForm peternak={peternak} onCreated={onCreated} onCancel={onCancel} />
+        : <PelayananGenericForm peternak={peternak} kategori={kategori} onCreated={onCreated} onCancel={onCancel} />}
+    </div>
+  );
+}
+
+function PelayananGenericForm({ peternak, kategori, onCreated, onCancel }) {
+  const [f, setF] = useState({ tgl: new Date().toISOString().slice(0, 10), jumlah: 1, modalitas: "", metode_layanan: "Kunjungan Lapangan", keterangan: "" });
+  const [detail, setDetail] = useState({});
+  const [ternakList, setTernakList] = useState([]);
+  const [ternakSel, setTernakSel] = useState("");
+  const [jenisManual, setJenisManual] = useState("");
+  const [obatList, setObatList] = useState([]);
+  const [obatSel, setObatSel] = useState("");
+  const [obatJml, setObatJml] = useState("");
+  const [obatDipakai, setObatDipakai] = useState([]);
+  const [foto, setFoto] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const fields = DETAIL_FIELDS[kategori] || [];
+
+  useEffect(() => {
+    jget(`/ternak?peternak_id=${peternak.id}`).then(setTernakList).catch(() => {});
+    jget("/obat").then(setObatList).catch(() => {});
+  }, [peternak.id]);
+
+  const ternakLabel = (t) => `${t.spesies}${t.eartag ? " · " + t.eartag : ""}${t.mode === "populasi" && t.jml_deklarasi ? " · " + t.jml_deklarasi + " ekor" : ""}`;
+  const ternakObj = ternakSel && ternakSel !== "lainnya" ? ternakList.find((x) => x.id === ternakSel) : null;
+  const obatPilih = obatList.find((o) => o.id === obatSel) || null;
+
+  async function onPickFoto(e) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (!files.length) return;
+    setErr(null);
+    setUploading(true);
+    try {
+      for (const file of files) {
+        const up = await uploadFoto(file, "pelayanan/baru");
+        setFoto((prev) => [...prev, { ...up, preview: URL.createObjectURL(file) }]);
+      }
+    } catch (e2) {
+      setErr(String(e2.message || e2));
+    } finally {
+      setUploading(false);
+    }
+  }
+  function tambahObat() {
+    if (!obatPilih || !obatJml) return;
+    setObatDipakai((p) => [...p, { obat_id: obatPilih.id, nama: obatPilih.nama_dagang, jumlah: parseFloat(obatJml), satuan: obatPilih.satuan }]);
+    setObatSel(""); setObatJml("");
+  }
+
+  async function submit() {
+    setErr(null);
+    setBusy(true);
+    try {
+      const body = { kategori, peternak_id: peternak.id };
+      if (f.tgl) body.tgl = f.tgl;
+      if (f.modalitas) body.modalitas = f.modalitas;
+      if (f.metode_layanan) body.metode_layanan = f.metode_layanan;
+      if (f.keterangan) body.keterangan = f.keterangan;
+      if (ternakObj) {
+        body.hewan = { ternak_id: ternakObj.id, jenis_hewan: ternakLabel(ternakObj), jumlah: ternakObj.mode === "populasi" && ternakObj.jml_deklarasi ? ternakObj.jml_deklarasi : 1 };
+      } else if (jenisManual) {
+        body.hewan = { jenis_hewan: jenisManual, jumlah: parseInt(f.jumlah, 10) || 1 };
+      }
+      const det = {};
+      fields.forEach((fl) => {
+        const v = detail[fl.key];
+        if (v !== undefined && v !== "") det[fl.key] = fl.type === "number" ? parseFloat(v) : v;
+      });
+      if (Object.keys(det).length) body.detail = det;
+      if (obatDipakai.length) body.obat = obatDipakai;
+      if (foto.length) body.foto = foto.map((x) => ({ key: x.key, content_type: x.content_type }));
+      const rec = await jpost("/pelayanan", body);
+      onCreated(rec);
+    } catch (e) {
+      setErr(String(e.message || e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div style={{ ...card, display: "grid", gap: 10, background: "#fafafa" }}>
+      <strong>Catat Pelayanan ({KATEGORI_LABEL[kategori] || kategori})</strong>
+      <input style={inp} type="date" value={f.tgl} onChange={(e) => setF({ ...f, tgl: e.target.value })} />
+
+      <label style={{ fontSize: 13, color: "#666", display: "grid", gap: 4 }}>
+        Hewan (opsional)
+        <select style={inp} value={ternakSel} onChange={(e) => setTernakSel(e.target.value)}>
+          <option value="">— Pilih ternak terdaftar —</option>
+          {ternakList.map((t) => <option key={t.id} value={t.id}>{ternakLabel(t)}</option>)}
+          <option value="lainnya">Lainnya (ketik manual)</option>
+        </select>
+      </label>
+      {ternakSel === "lainnya" && (
+        <div style={{ display: "flex", gap: 8 }}>
+          <input style={inp} placeholder="Jenis hewan" value={jenisManual} onChange={(e) => setJenisManual(e.target.value)} />
+          <input style={{ ...inp, width: 90 }} type="number" min="1" placeholder="Jml" value={f.jumlah} onChange={(e) => setF({ ...f, jumlah: e.target.value })} />
+        </div>
+      )}
+
+      {fields.map((fl) => (
+        fl.type === "select" ? (
+          <select key={fl.key} style={inp} value={detail[fl.key] || ""} onChange={(e) => setDetail({ ...detail, [fl.key]: e.target.value })}>
+            <option value="">— {fl.label} —</option>
+            {fl.options.map((o) => <option key={o} value={o}>{o}</option>)}
+          </select>
+        ) : (
+          <input key={fl.key} style={inp} type={fl.type === "number" ? "number" : "text"} placeholder={fl.label}
+            value={detail[fl.key] ?? ""} onChange={(e) => setDetail({ ...detail, [fl.key]: e.target.value })} />
+        )
+      ))}
+
+      <select style={inp} value={f.modalitas} onChange={(e) => setF({ ...f, modalitas: e.target.value })}>
+        <option value="">— Modalitas (Pasif/Aktif/Semiaktif) —</option>
+        <option>Pasif</option><option>Aktif</option><option>Semiaktif</option><option>Yanduwan/Vaksinasi</option>
+      </select>
+      <select style={inp} value={f.metode_layanan} onChange={(e) => setF({ ...f, metode_layanan: e.target.value })}>
+        <option value="">— Metode —</option>
+        <option>Langsung</option><option>Tidak Langsung</option><option>Telepon/WA</option><option>Kunjungan Lapangan</option>
+      </select>
+
+      <div style={{ border: "1px solid #e3e3e3", borderRadius: 10, padding: 12, display: "grid", gap: 8 }}>
+        <div style={{ fontSize: 13, color: "#444", fontWeight: 500 }}>💊 Obat / bahan dipakai (opsional)</div>
+        {obatDipakai.length > 0 && (
+          <div style={{ display: "grid", gap: 6 }}>
+            {obatDipakai.map((o, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontSize: 14, background: "#f6f6f6", borderRadius: 8, padding: "6px 10px" }}>
+                <span>{o.nama} — <strong>{o.jumlah} {o.satuan}</strong></span>
+                <button type="button" onClick={() => setObatDipakai((p) => p.filter((_, j) => j !== i))} style={{ ...btnGhost, padding: "2px 8px", fontSize: 12, color: "#c00", borderColor: "#e0b4b4" }}>Hapus</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <select style={{ ...inp, flex: "1 1 160px" }} value={obatSel} onChange={(e) => setObatSel(e.target.value)}>
+            <option value="">— Pilih obat/vaksin —</option>
+            {obatList.map((o) => <option key={o.id} value={o.id}>{o.nama_dagang}</option>)}
+          </select>
+          <input style={{ ...inp, width: 90 }} type="number" min="0" step="0.1" placeholder="Jumlah" value={obatJml} onChange={(e) => setObatJml(e.target.value)} />
+          <span style={{ alignSelf: "center", color: "#666", fontSize: 14, minWidth: 36 }}>{obatPilih ? obatPilih.satuan : ""}</span>
+          <button type="button" style={btnGhost} disabled={!obatPilih || !obatJml} onClick={tambahObat}>+ Tambah</button>
+        </div>
+      </div>
+
+      <input style={inp} placeholder="Keterangan (opsional)" value={f.keterangan} onChange={(e) => setF({ ...f, keterangan: e.target.value })} />
+
+      <div>
+        <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>Foto (opsional, bisa lebih dari 1)</div>
+        {foto.length > 0 && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+            {foto.map((x, i) => (
+              <div key={x.key} style={{ position: "relative" }}>
+                <img src={x.preview} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8, border: "1px solid #ddd" }} />
+                <button type="button" onClick={() => setFoto((p) => p.filter((_, j) => j !== i))} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", border: "none", background: "#c00", color: "#fff", cursor: "pointer", fontSize: 12, lineHeight: "20px", padding: 0 }}>×</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <label style={{ ...btnGhost, display: "inline-block" }}>
+          {uploading ? "Mengunggah…" : "📷 Tambah foto"}
+          <input type="file" accept="image/*" multiple style={{ display: "none" }} onChange={onPickFoto} disabled={uploading} />
+        </label>
+      </div>
+
+      {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button style={btn} disabled={busy || uploading} onClick={submit}>{busy ? "Menyimpan…" : "Simpan pelayanan"}</button>
+        <button style={btnGhost} onClick={onCancel}>Batal</button>
+      </div>
+    </div>
+  );
+}
+
+function PelayananKeswanForm({ peternak, onCreated, onCancel }) {
   const [f, setF] = useState({
     tgl: new Date().toISOString().slice(0, 10), jumlah: 1,
     diagnosa_teks: "", tindakan: "", prognosa: "", modalitas: "", metode_layanan: "Kunjungan Lapangan", keterangan: "",
@@ -1391,6 +1598,9 @@ function LaporanPage() {
     push("Mutasi ternak");
     Object.entries(data.ternak_mutasi).forEach(([k, v]) => push(k, v));
     push("");
+    push("Per kategori kegiatan"); push("Kategori", "Jumlah");
+    Object.entries(data.pelayanan.per_kategori || {}).forEach(([k, v]) => push(KATEGORI_LABEL[k] || k, v));
+    push("");
     push("Per modalitas");
     Object.entries(data.pelayanan.per_modalitas || {}).forEach(([k, v]) => push(k, v));
     push("");
@@ -1460,6 +1670,8 @@ function LaporanPage() {
             <div>Prognosa: {ringkas(data.pelayanan.per_prognosa)}</div>
             <div>Mutasi ternak: {ringkas(data.ternak_mutasi)}</div>
           </div>
+          <SeksiTabel judul="Per kategori kegiatan" kolom={["Kategori", "Jumlah"]}
+            baris={Object.entries(data.pelayanan.per_kategori || {}).map(([k, v]) => [KATEGORI_LABEL[k] || k, v])} />
           <SeksiTabel judul="Per penyakit (iSIKHNAS)" kolom={["Kode", "Nama", "Jumlah"]}
             baris={data.pelayanan.per_penyakit.map((x) => [x.kode, x.nama, x.jumlah])} />
           <SeksiTabel judul="Per wilayah" kolom={["Kalurahan", "Jumlah"]}
