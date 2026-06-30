@@ -1278,6 +1278,140 @@ function PendaftaranPage({ onConfirmed }) {
   );
 }
 
+const BULAN_NAMA = ["", "Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+
+function StatBox({ label, val }) {
+  return (
+    <div style={{ ...card, textAlign: "center" }}>
+      <div style={{ fontSize: 22, fontWeight: 600, color: "#0f6e56" }}>{val}</div>
+      <div style={{ fontSize: 12, color: "#666" }}>{label}</div>
+    </div>
+  );
+}
+
+function SeksiTabel({ judul, kolom, baris }) {
+  if (!baris.length) return null;
+  return (
+    <div style={card}>
+      <strong style={{ fontSize: 14 }}>{judul}</strong>
+      <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 6, fontSize: 14 }}>
+        <thead>
+          <tr>{kolom.map((k, i) => (
+            <th key={i} style={{ textAlign: i === kolom.length - 1 ? "right" : "left", color: "#888", fontWeight: 500, padding: "4px 0", borderBottom: "1px solid #eee" }}>{k}</th>
+          ))}</tr>
+        </thead>
+        <tbody>
+          {baris.map((b, i) => (
+            <tr key={i}>{b.map((c, j) => (
+              <td key={j} style={{ textAlign: j === b.length - 1 ? "right" : "left", padding: "4px 0", borderBottom: "1px solid #f3f3f3" }}>{c}</td>
+            ))}</tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function LaporanPage() {
+  const now = new Date();
+  const [periode, setPeriode] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
+  const [wil, setWil] = useState({ kapanewon_id: null, kalurahan_id: null, padukuhan_id: null });
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState(null);
+
+  async function tampilkan() {
+    setErr(null);
+    setLoading(true);
+    setData(null);
+    try {
+      const [y, m] = periode.split("-");
+      let url = `/laporan/bulanan?tahun=${parseInt(y, 10)}&bulan=${parseInt(m, 10)}`;
+      if (wil.kalurahan_id) url += `&kalurahan_id=${wil.kalurahan_id}`;
+      setData(await jget(url));
+    } catch (e) {
+      setErr(String(e.message || e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function unduhCSV() {
+    if (!data) return;
+    const rows = [];
+    const push = (...cols) => rows.push(cols.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(","));
+    push("REKAP BULANAN", `${BULAN_NAMA[data.periode.bulan]} ${data.periode.tahun}`);
+    push("");
+    push("Ringkasan");
+    push("Total pelayanan", data.pelayanan.total);
+    push("Peternak baru", data.peternak_baru);
+    push("Pendaftaran baru", data.pendaftaran.baru);
+    push("Pendaftaran dikonfirmasi", data.pendaftaran.dikonfirmasi);
+    push("");
+    push("Mutasi ternak");
+    Object.entries(data.ternak_mutasi).forEach(([k, v]) => push(k, v));
+    push("");
+    push("Per penyakit (iSIKHNAS)"); push("Kode", "Nama", "Jumlah");
+    data.pelayanan.per_penyakit.forEach((x) => push(x.kode, x.nama, x.jumlah));
+    push("");
+    push("Per wilayah"); push("Kalurahan", "Jumlah");
+    data.pelayanan.per_wilayah.forEach((x) => push(x.nama, x.jumlah));
+    push("");
+    push("Per petugas"); push("Petugas", "Jumlah");
+    data.pelayanan.per_petugas.forEach((x) => push(x.nama, x.jumlah));
+    push("");
+    push("Pemakaian obat"); push("Obat", "Jumlah", "Satuan");
+    data.obat.forEach((x) => push(x.nama, x.jumlah, x.satuan));
+    const blob = new Blob(["\ufeff" + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `rekap-${data.periode.tahun}-${String(data.periode.bulan).padStart(2, "0")}.csv`;
+    a.click();
+  }
+
+  const ringkas = (obj) => Object.entries(obj || {}).map(([k, v]) => `${k}: ${v}`).join(" · ") || "—";
+
+  return (
+    <div style={{ display: "grid", gap: 12 }}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+        <input style={{ ...inp, width: 170 }} type="month" value={periode} onChange={(e) => setPeriode(e.target.value)} />
+        <button style={btn} disabled={loading} onClick={tampilkan}>{loading ? "Memuat…" : "Tampilkan"}</button>
+        {data && <button style={btnGhost} onClick={unduhCSV}>⬇ Unduh CSV</button>}
+      </div>
+      <div>
+        <div style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>Filter wilayah (opsional)</div>
+        <WilayahCascade value={wil} onChange={setWil} />
+      </div>
+      {err && <div style={{ color: "#c00" }}>{err}</div>}
+      {data && (
+        <div style={{ display: "grid", gap: 12 }}>
+          <div style={{ color: "#666", fontSize: 14 }}>Periode: <strong>{BULAN_NAMA[data.periode.bulan]} {data.periode.tahun}</strong></div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8 }}>
+            <StatBox label="Total pelayanan" val={data.pelayanan.total} />
+            <StatBox label="Peternak baru" val={data.peternak_baru} />
+            <StatBox label="Pendaftaran baru" val={data.pendaftaran.baru} />
+            <StatBox label="Kematian ternak" val={data.ternak_mutasi.mati || 0} />
+          </div>
+          <div style={{ ...card, fontSize: 13, color: "#555" }}>
+            <div>Metode: {ringkas(data.pelayanan.per_metode)}</div>
+            <div>Prognosa: {ringkas(data.pelayanan.per_prognosa)}</div>
+            <div>Mutasi ternak: {ringkas(data.ternak_mutasi)}</div>
+          </div>
+          <SeksiTabel judul="Per penyakit (iSIKHNAS)" kolom={["Kode", "Nama", "Jumlah"]}
+            baris={data.pelayanan.per_penyakit.map((x) => [x.kode, x.nama, x.jumlah])} />
+          <SeksiTabel judul="Per wilayah" kolom={["Kalurahan", "Jumlah"]}
+            baris={data.pelayanan.per_wilayah.map((x) => [x.nama, x.jumlah])} />
+          <SeksiTabel judul="Per petugas" kolom={["Petugas", "Jumlah"]}
+            baris={data.pelayanan.per_petugas.map((x) => [x.nama, x.jumlah])} />
+          <SeksiTabel judul="Pemakaian obat" kolom={["Obat", "Jumlah", "Satuan"]}
+            baris={data.obat.map((x) => [x.nama, x.jumlah, x.satuan])} />
+          {data.pelayanan.total === 0 && <div style={{ color: "#888" }}>Tidak ada pelayanan pada periode ini.</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Shell({ user, onLogout }) {
   const [role, setRole] = useState(user.roles.length === 1 ? user.roles[0] : null);
   const [tab, setTab] = useState("peternak");
@@ -1326,10 +1460,12 @@ function Shell({ user, onLogout }) {
             <button style={tab === "pendaftaran" ? btn : btnGhost} onClick={() => { setTab("pendaftaran"); refreshPendaftaran(); }}>
               Pendaftaran{pendaftaranBaru ? ` (${pendaftaranBaru})` : ""}
             </button>
+            <button style={tab === "laporan" ? btn : btnGhost} onClick={() => setTab("laporan")}>Laporan</button>
           </div>
           {tab === "peternak" && <PeternakPage isAdmin={user.roles.includes("admin")} />}
           {tab === "obat" && <ObatPage isAdmin={user.roles.includes("admin")} />}
           {tab === "pendaftaran" && <PendaftaranPage onConfirmed={refreshPendaftaran} />}
+          {tab === "laporan" && <LaporanPage />}
         </>
       ) : (
         <div style={{ ...card, color: "#888" }}>Beranda peternak menyusul di slice berikutnya.</div>
