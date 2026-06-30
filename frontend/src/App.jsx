@@ -55,6 +55,21 @@ const btnGhost = { padding: "8px 12px", borderRadius: 8, border: "1px solid #ccc
 const card = { border: "1px solid #e3e3e0", borderRadius: 12, padding: 16, background: "#fff" };
 const STATUS_COLOR = { aktif: "#0f6e56", mati: "#888", dijual: "#b58100", dipotong: "#a33" };
 
+function hitungUmur(tgl) {
+  if (!tgl) return "";
+  const lahir = new Date(tgl);
+  if (isNaN(lahir.getTime())) return "";
+  const now = new Date();
+  let bulan = (now.getFullYear() - lahir.getFullYear()) * 12 + (now.getMonth() - lahir.getMonth());
+  if (now.getDate() < lahir.getDate()) bulan -= 1;
+  if (bulan < 0) bulan = 0;
+  const th = Math.floor(bulan / 12);
+  const bl = bulan % 12;
+  if (th <= 0) return `${bl} bln`;
+  if (bl === 0) return `${th} th`;
+  return `${th} th ${bl} bln`;
+}
+
 function Login({ onLogin }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -249,7 +264,10 @@ function TernakForm({ peternakId, onCreated, onCancel }) {
             <option value="betina">Betina</option>
             <option value="jantan">Jantan</option>
           </select>
-          <input style={inp} type="date" value={f.tgl_lahir} onChange={(e) => setF({ ...f, tgl_lahir: e.target.value })} />
+          <label style={{ fontSize: 13, color: "#666", display: "grid", gap: 4 }}>
+            Tanggal lahir (opsional)
+            <input style={inp} type="date" value={f.tgl_lahir} onChange={(e) => setF({ ...f, tgl_lahir: e.target.value })} />
+          </label>
         </>
       ) : (
         <input style={inp} type="number" placeholder="Jumlah (deklarasi peternak)" value={f.jml_deklarasi} onChange={(e) => setF({ ...f, jml_deklarasi: e.target.value })} />
@@ -308,6 +326,7 @@ function TernakList({ peternakId, refreshKey, isAdmin }) {
             <div style={{ fontSize: 13, color: "#666" }}>
               <span style={{ color: STATUS_COLOR[t.status] || "#333", fontWeight: 500 }}>{t.status}</span>
               {t.jenis_kelamin ? ` · ${t.jenis_kelamin}` : ""}
+              {t.tgl_lahir ? ` · ${hitungUmur(t.tgl_lahir)}` : ""}
             </div>
           </div>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
