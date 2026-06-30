@@ -100,3 +100,12 @@ admin_router = APIRouter(prefix="/admin", tags=["admin"])
 @admin_router.get("/ping")
 async def admin_ping(user: dict = Depends(require_roles("admin"))):
     return {"ok": True, "as": user["nama"]}
+
+
+@admin_router.get("/users")
+async def list_users(_user: dict = Depends(require_roles("admin"))):
+    """Daftar akun (admin only) — untuk memilih petugas saat mendaftarkan nomor WA."""
+    rows = await get_db().users.find(
+        {}, {"_id": 0, "id": 1, "nama": 1, "username": 1, "roles": 1, "aktif": 1}
+    ).to_list(500)
+    return rows
