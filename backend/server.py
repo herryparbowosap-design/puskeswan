@@ -16,6 +16,8 @@ import wilayah
 import ras
 import peternak
 import ternak
+import pelayanan
+import penyakit
 from auth import router as auth_router, admin_router
 
 
@@ -25,6 +27,7 @@ async def ensure_indexes(db):
     await db.peternak.create_index([("koordinat", "2dsphere")])
     await db.ternak.create_index("peternak_id")
     await db.pelayanan.create_index([("kategori", 1), ("tgl", 1)])
+    await db.pelayanan.create_index("peternak.peternak_id")
     await db.pelayanan.create_index("peternak.wilayah_id")
     await db.wilayah.create_index([("level", 1), ("parent_id", 1)])
     await db.penyakit.create_index("kategori")
@@ -41,7 +44,7 @@ async def lifespan(app: FastAPI):
     get_client().close()
 
 
-app = FastAPI(title="SIM Puskeswan", version="0.3.0", lifespan=lifespan)
+app = FastAPI(title="SIM Puskeswan", version="0.4.0", lifespan=lifespan)
 
 origins = [o for o in os.getenv("CORS_ORIGINS", "*").split(",") if o]
 app.add_middleware(
@@ -70,3 +73,5 @@ app.include_router(wilayah.router, prefix="/api")
 app.include_router(ras.router, prefix="/api")
 app.include_router(peternak.router, prefix="/api")
 app.include_router(ternak.router, prefix="/api")
+app.include_router(pelayanan.router, prefix="/api")
+app.include_router(penyakit.router, prefix="/api")
