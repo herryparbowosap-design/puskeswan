@@ -855,9 +855,44 @@ function ObatForm({ initial, onSaved, onCancel }) {
   });
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
 
   const num = (v) => (v === "" || v === null ? null : parseFloat(v));
   const int = (v) => (v === "" || v === null ? null : parseInt(v, 10));
+
+  async function onFotoLabel(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setErr(null);
+    setAiBusy(true);
+    try {
+      const b64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(String(r.result).split(",")[1]);
+        r.onerror = () => rej(new Error("gagal baca file"));
+        r.readAsDataURL(file);
+      });
+      const d = await jpost("/ai/baca-obat", { image_base64: b64, media_type: file.type || "image/jpeg" });
+      const satuanOk = ["ml", "tablet", "bolus", "sachet", "kapsul", "gram"];
+      const ruteOk = ["IM", "IV", "SC", "IM/IV", "oral", "topikal"];
+      setF((p) => ({
+        ...p,
+        nama_dagang: d.nama_dagang ?? p.nama_dagang,
+        zat_aktif: d.zat_aktif ?? p.zat_aktif,
+        konsentrasi: d.konsentrasi ?? p.konsentrasi,
+        satuan: d.satuan && satuanOk.includes(String(d.satuan).toLowerCase()) ? String(d.satuan).toLowerCase() : p.satuan,
+        dosis_per_kg: d.dosis_per_kg ?? p.dosis_per_kg,
+        rute: d.rute && ruteOk.includes(d.rute) ? d.rute : p.rute,
+        waktu_henti_daging_hari: d.waktu_henti_daging_hari ?? p.waktu_henti_daging_hari,
+        waktu_henti_susu_jam: d.waktu_henti_susu_jam ?? p.waktu_henti_susu_jam,
+      }));
+    } catch (e2) {
+      setErr(String(e2.message || e2));
+    } finally {
+      setAiBusy(false);
+    }
+  }
 
   async function submit() {
     setErr(null);
@@ -886,6 +921,13 @@ function ObatForm({ initial, onSaved, onCancel }) {
   return (
     <div style={{ ...card, display: "grid", gap: 10, background: "#fafafa" }}>
       <strong>{isEdit ? "Edit Obat" : "Tambah Obat"}</strong>
+      <div style={{ border: "1px dashed #d6a700", borderRadius: 10, padding: 10, background: "#fffdf5", display: "grid", gap: 6 }}>
+        <label style={{ ...btnGhost, borderColor: "#d6a700", color: "#9a7b00", display: "block", textAlign: "center", cursor: aiBusy ? "default" : "pointer" }}>
+          {aiBusy ? "Membaca label…" : "📷 Foto label obat — AI isi otomatis"}
+          <input type="file" accept="image/*" style={{ display: "none" }} onChange={onFotoLabel} disabled={aiBusy} />
+        </label>
+        <div style={{ fontSize: 11, color: "#999" }}>AI membaca yang tercetak di label. Periksa &amp; koreksi angka (konsentrasi/dosis) sebelum simpan.</div>
+      </div>
       <input style={inp} placeholder="Nama dagang *" value={f.nama_dagang} onChange={(e) => setF({ ...f, nama_dagang: e.target.value })} />
       <input style={inp} placeholder="Zat aktif (mis. Oksitetrasiklin)" value={f.zat_aktif} onChange={(e) => setF({ ...f, zat_aktif: e.target.value })} />
       <div style={{ display: "flex", gap: 8 }}>
