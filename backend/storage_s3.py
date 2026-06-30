@@ -36,13 +36,19 @@ _IMG_EXT = {".jpg", ".jpeg", ".png", ".webp", ".heic"}
 
 
 def _client():
+    region = os.getenv("S3_REGION") or ""
+    endpoint = os.getenv("S3_ENDPOINT_URL") or ""
+    # AWS (tanpa endpoint custom): paksa endpoint REGIONAL agar presigned PUT
+    # tidak kena 307 redirect dari host global s3.amazonaws.com.
+    if not endpoint and region and region != "auto":
+        endpoint = f"https://s3.{region}.amazonaws.com"
     return boto3.client(
         "s3",
-        endpoint_url=os.getenv("S3_ENDPOINT_URL") or None,  # None = AWS
-        region_name=os.getenv("S3_REGION", "auto"),
+        endpoint_url=endpoint or None,
+        region_name=None if region in ("", "auto") else region,
         aws_access_key_id=os.getenv("S3_ACCESS_KEY_ID"),
         aws_secret_access_key=os.getenv("S3_SECRET_ACCESS_KEY"),
-        config=Config(signature_version="s3v4"),
+        config=Config(signature_version="s3v4", s3={"addressing_style": "virtual"}),
     )
 
 
