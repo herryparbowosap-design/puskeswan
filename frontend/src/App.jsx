@@ -162,6 +162,34 @@ function PeternakForm({ initial, onSaved, onCancel }) {
   const [gps, setGps] = useState("");
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [ktpBusy, setKtpBusy] = useState(false);
+
+  async function onFotoKtp(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setErr(null);
+    setKtpBusy(true);
+    try {
+      const b64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(String(r.result).split(",")[1]);
+        r.onerror = () => rej(new Error("gagal baca file"));
+        r.readAsDataURL(file);
+      });
+      const d = await jpost("/ai/baca-ktp", { image_base64: b64, media_type: file.type || "image/jpeg" });
+      setF((p) => ({
+        ...p,
+        nama: d.nama ?? p.nama,
+        nik: d.nik ?? p.nik,
+        alamat_detail: d.alamat ?? p.alamat_detail,
+      }));
+    } catch (e2) {
+      setErr(String(e2.message || e2));
+    } finally {
+      setKtpBusy(false);
+    }
+  }
 
   function ambilGPS() {
     if (!navigator.geolocation) { setGps("GPS tidak tersedia"); return; }
@@ -192,6 +220,11 @@ function PeternakForm({ initial, onSaved, onCancel }) {
   return (
     <div style={{ ...card, display: "grid", gap: 10 }}>
       <strong>{isEdit ? "Edit Peternak" : "Tambah Peternak"}</strong>
+      <label style={{ ...btnGhost, display: "inline-block", borderColor: "#e3b341", color: "#a06800", background: "#fff9ec" }}>
+        {ktpBusy ? "Membaca KTP…" : "📷 Scan KTP — AI isi otomatis"}
+        <input type="file" accept="image/*" capture="environment" style={{ display: "none" }} onChange={onFotoKtp} disabled={ktpBusy} />
+      </label>
+      <div style={{ fontSize: 11, color: "#999", marginTop: -4 }}>Foto KTP tidak disimpan — hanya nama/NIK/alamat yang diisi. Periksa & koreksi sebelum simpan.</div>
       <input style={inp} placeholder="Nama *" value={f.nama} onChange={(e) => setF({ ...f, nama: e.target.value })} />
       <input style={inp} placeholder="No. WA / kontak *" value={f.kontak} onChange={(e) => setF({ ...f, kontak: e.target.value })} />
       <input style={inp} placeholder="NIK (opsional)" value={f.nik} onChange={(e) => setF({ ...f, nik: e.target.value })} />
@@ -926,8 +959,71 @@ function PelayananList({ peternakId, refreshKey, isAdmin }) {
   );
 }
 
+function AISusunTernak({ peternakId, onCreated, onClose }) {
+  const [teks, setTeks] = useState("");
+  const [draft, setDraft] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState(null);
+
+  async function susun() {
+    setErr(null); setBusy(true);
+    try {
+      const d = await jpost("/ai/susun-ternak", { teks });
+      setDraft(d.ternak || []);
+    } catch (e) { setErr(String(e.message || e)); } finally { setBusy(false); }
+  }
+  const ubah = (i, k, v) => setDraft((d) => d.map((row, j) => (j === i ? { ...row, [k]: v } : row)));
+  const hapus = (i) => setDraft((d) => d.filter((_, j) => j !== i));
+  async function simpanSemua() {
+    setErr(null); setSaving(true);
+    try {
+      for (const t of draft) {
+        const body = { peternak_id: peternakId, spesies: t.spesies, mode: t.mode };
+        if (t.jenis_kelamin) body.jenis_kelamin = t.jenis_kelamin;
+        if (t.mode === "populasi" && t.jml_deklarasi) body.jml_deklarasi = parseInt(t.jml_deklarasi, 10);
+        await jpost("/ternak", body);
+      }
+      onCreated();
+    } catch (e) { setErr(String(e.message || e)); } finally { setSaving(false); }
+  }
+
+  return (
+    <div style={{ ...card, display: "grid", gap: 10, background: "#fff9ec", border: "1px solid #f0e0b8" }}>
+      <strong style={{ color: "#a06800" }}>✨ AI susun ternak</strong>
+      <div style={{ fontSize: 13, color: "#777" }}>Tulis bebas, mis. "3 sapi PO betina, 10 ayam, 1 kambing jantan". AI menyusun jadi daftar — periksa sebelum simpan.</div>
+      <textarea style={{ ...inp, minHeight: 64, resize: "vertical" }} value={teks} onChange={(e) => setTeks(e.target.value)} placeholder="Deskripsi ternak…" />
+      <div style={{ display: "flex", gap: 8 }}>
+        <button style={btn} disabled={busy || teks.trim().length < 3} onClick={susun}>{busy ? "Menyusun…" : "Susun dengan AI"}</button>
+        <button style={btnGhost} onClick={onClose}>Tutup</button>
+      </div>
+      {draft && draft.length === 0 && <div style={{ color: "#888" }}>Tidak ada ternak terbaca. Coba ubah deskripsi.</div>}
+      {draft && draft.length > 0 && (
+        <div style={{ display: "grid", gap: 8 }}>
+          {draft.map((t, i) => (
+            <div key={i} style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", background: "#fff", borderRadius: 8, padding: 8 }}>
+              <input style={{ ...inp, flex: "1 1 110px" }} value={t.spesies} onChange={(e) => ubah(i, "spesies", e.target.value)} />
+              <select style={{ ...inp, width: 120 }} value={t.mode} onChange={(e) => ubah(i, "mode", e.target.value)}>
+                <option value="individu">individu</option><option value="populasi">populasi</option>
+              </select>
+              {t.mode === "populasi" && <input style={{ ...inp, width: 80 }} type="number" min="1" value={t.jml_deklarasi || ""} onChange={(e) => ubah(i, "jml_deklarasi", e.target.value)} placeholder="jml" />}
+              <select style={{ ...inp, width: 110 }} value={t.jenis_kelamin || ""} onChange={(e) => ubah(i, "jenis_kelamin", e.target.value || null)}>
+                <option value="">kelamin?</option><option>Jantan</option><option>Betina</option>
+              </select>
+              <button style={{ ...btnGhost, color: "#c00", padding: "4px 8px" }} onClick={() => hapus(i)}>×</button>
+            </div>
+          ))}
+          <button style={btn} disabled={saving} onClick={simpanSemua}>{saving ? "Menyimpan…" : `Simpan semua (${draft.length})`}</button>
+        </div>
+      )}
+      {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
+    </div>
+  );
+}
+
 function PeternakDetail({ peternak, isAdmin, onBack, onUpdated }) {
   const [showForm, setShowForm] = useState(false);
+  const [showAI, setShowAI] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showPel, setShowPel] = useState(false);
   const [pelKey, setPelKey] = useState(0);
@@ -989,10 +1085,15 @@ function PeternakDetail({ peternak, isAdmin, onBack, onUpdated }) {
         </div>
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         <strong>Ternak</strong>
-        <button style={btn} onClick={() => setShowForm((s) => !s)}>{showForm ? "Tutup" : "+ Tambah ternak"}</button>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button style={btnGhost} onClick={() => { setShowAI((s) => !s); setShowForm(false); }}>{showAI ? "Tutup AI" : "✨ AI susun"}</button>
+          <button style={btn} onClick={() => { setShowForm((s) => !s); setShowAI(false); }}>{showForm ? "Tutup" : "+ Tambah ternak"}</button>
+        </div>
       </div>
+      {showAI && <AISusunTernak peternakId={pet.id} onClose={() => setShowAI(false)}
+        onCreated={() => { setShowAI(false); setRefreshKey((k) => k + 1); }} />}
       {showForm && <TernakForm peternakId={pet.id} onCancel={() => setShowForm(false)}
         onCreated={() => { setShowForm(false); setRefreshKey((k) => k + 1); }} />}
       <TernakList peternakId={pet.id} refreshKey={refreshKey} isAdmin={isAdmin} />
@@ -1559,12 +1660,12 @@ function SeksiTabel({ judul, kolom, baris }) {
   );
 }
 
-function RincianKategoriView({ rinc }) {
+function RincianKategoriView({ rinc, judul = "Rincian per kategori" }) {
   const keys = Object.keys(rinc || {});
   if (!keys.length) return null;
   return (
     <div style={{ ...card, display: "grid", gap: 14 }}>
-      <strong style={{ fontSize: 14 }}>Rincian per kategori</strong>
+      <strong style={{ fontSize: 14 }}>{judul}</strong>
       {keys.map((kat) => {
         const isi = rinc[kat];
         const ringkas = isi.ringkas || {};
@@ -1667,6 +1768,19 @@ function LaporanPage() {
         tb.baris.forEach((b) => push(...b));
       });
     });
+    const km = data.kegiatan_massal || {};
+    if (km.total) {
+      push("");
+      push("KEGIATAN MASSAL");
+      push("Total kegiatan", km.total);
+      push("Total sasaran", km.total_sasaran);
+      push("");
+      push("Kegiatan massal — per kategori"); push("Kategori", "Jumlah");
+      Object.entries(km.per_kategori || {}).forEach(([k, v]) => push(KATEGORI_LABEL[k] || k, v));
+      push("");
+      push("Kegiatan massal — per wilayah"); push("Kalurahan", "Jumlah");
+      (km.per_wilayah || []).forEach((x) => push(x.nama, x.jumlah));
+    }
     const blob = new Blob(["\ufeff" + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -1733,7 +1847,262 @@ function LaporanPage() {
           <SeksiTabel judul="Pemakaian obat" kolom={["Obat", "Jumlah", "Satuan"]}
             baris={data.obat.map((x) => [x.nama, x.jumlah, x.satuan])} />
           <RincianKategoriView rinc={data.pelayanan.rincian_kategori} />
+          {data.kegiatan_massal && data.kegiatan_massal.total > 0 && (
+            <>
+              <div style={{ ...card, fontSize: 13, color: "#555" }}>
+                <strong style={{ fontSize: 14, display: "block", marginBottom: 6 }}>Kegiatan massal</strong>
+                <div>Total kegiatan: <strong>{data.kegiatan_massal.total}</strong> · Total sasaran: <strong>{data.kegiatan_massal.total_sasaran}</strong></div>
+                <div>Modalitas: {ringkas(data.kegiatan_massal.per_modalitas)}</div>
+              </div>
+              <SeksiTabel judul="Kegiatan massal — per kategori" kolom={["Kategori", "Jumlah"]}
+                baris={Object.entries(data.kegiatan_massal.per_kategori || {}).map(([k, v]) => [KATEGORI_LABEL[k] || k, v])} />
+              <SeksiTabel judul="Kegiatan massal — per wilayah" kolom={["Kalurahan", "Jumlah"]}
+                baris={data.kegiatan_massal.per_wilayah.map((x) => [x.nama, x.jumlah])} />
+              <RincianKategoriView rinc={data.kegiatan_massal.rincian_kategori} judul="Kegiatan massal — rincian" />
+            </>
+          )}
           {data.pelayanan.total === 0 && <div style={{ color: "#888" }}>Tidak ada pelayanan pada periode ini.</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function QRGenerator() {
+  const [kalList, setKalList] = useState([]);
+  const [sel, setSel] = useState("");
+  const [imgUrl, setImgUrl] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+
+  useEffect(() => { jget("/wilayah?level=kalurahan").then(setKalList).catch(() => {}); }, []);
+
+  function targetUrl() {
+    const base = `${window.location.origin}/#/daftar`;
+    if (!sel) return base;
+    const kal = kalList.find((k) => k.id === sel);
+    const kap = kal?.parent_id ? `kapanewon=${encodeURIComponent(kal.parent_id)}&` : "";
+    return `${base}?${kap}kalurahan=${encodeURIComponent(sel)}`;
+  }
+  async function buat() {
+    setErr(null); setBusy(true);
+    try {
+      const r = await api(`/qr?data=${encodeURIComponent(targetUrl())}&box=10`);
+      if (!r.ok) throw new Error(`gagal (${r.status})`);
+      const blob = await r.blob();
+      if (imgUrl) URL.revokeObjectURL(imgUrl);
+      setImgUrl(URL.createObjectURL(blob));
+    } catch (e) { setErr(String(e.message || e)); } finally { setBusy(false); }
+  }
+  function unduh() {
+    if (!imgUrl) return;
+    const a = document.createElement("a");
+    a.href = imgUrl;
+    a.download = sel ? `qr-daftar-${sel}.png` : "qr-daftar-umum.png";
+    a.click();
+  }
+
+  return (
+    <div style={{ ...card, display: "grid", gap: 12 }}>
+      <strong>QR Pendaftaran</strong>
+      <div style={{ fontSize: 13, color: "#666" }}>Buat QR menuju halaman pendaftaran. Pilih "Umum" atau satu kalurahan — QR kalurahan otomatis mengisi wilayah saat di-scan.</div>
+      <select style={inp} value={sel} onChange={(e) => { setSel(e.target.value); setImgUrl(null); }}>
+        <option value="">Umum (tanpa wilayah)</option>
+        {kalList.map((k) => <option key={k.id} value={k.id}>{k.nama}</option>)}
+      </select>
+      <div style={{ fontSize: 12, color: "#999", wordBreak: "break-all" }}>{targetUrl()}</div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button style={btn} disabled={busy} onClick={buat}>{busy ? "Membuat…" : "Buat QR"}</button>
+        {imgUrl && <button style={btnGhost} onClick={unduh}>⬇ Unduh PNG</button>}
+      </div>
+      {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
+      {imgUrl && <img src={imgUrl} alt="QR pendaftaran" style={{ width: 240, height: 240, alignSelf: "center", border: "1px solid #eee", borderRadius: 8 }} />}
+    </div>
+  );
+}
+
+const KEGIATAN_KATEGORI = ["VAKSINASI", "DESINFEKSI", "PEMBINAAN", "PKB", "GANGREP", "IB", "LAB", "KONSULTASI", "ADUAN", "KESWAN"];
+
+function KegiatanForm({ onCreated, onCancel }) {
+  const [f, setF] = useState({ kategori: "VAKSINASI", tgl: new Date().toISOString().slice(0, 10), modalitas: "", kalurahan_id: "", lokasi: "", jumlah_sasaran: "", keterangan: "" });
+  const [detail, setDetail] = useState({});
+  const [kalList, setKalList] = useState([]);
+  const [obatList, setObatList] = useState([]);
+  const [obatSel, setObatSel] = useState("");
+  const [obatJml, setObatJml] = useState("");
+  const [obatDipakai, setObatDipakai] = useState([]);
+  const [foto, setFoto] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const fields = DETAIL_FIELDS[f.kategori] || [];
+
+  useEffect(() => {
+    jget("/wilayah?level=kalurahan").then(setKalList).catch(() => {});
+    jget("/obat").then(setObatList).catch(() => {});
+  }, []);
+  const obatPilih = obatList.find((o) => o.id === obatSel) || null;
+
+  async function onPickFoto(e) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (!files.length) return;
+    setErr(null); setUploading(true);
+    try {
+      for (const file of files) {
+        const up = await uploadFoto(file, "kegiatan/baru");
+        setFoto((prev) => [...prev, { ...up, preview: URL.createObjectURL(file) }]);
+      }
+    } catch (e2) { setErr(String(e2.message || e2)); } finally { setUploading(false); }
+  }
+  function tambahObat() {
+    if (!obatPilih || !obatJml) return;
+    setObatDipakai((p) => [...p, { obat_id: obatPilih.id, nama: obatPilih.nama_dagang, jumlah: parseFloat(obatJml), satuan: obatPilih.satuan }]);
+    setObatSel(""); setObatJml("");
+  }
+  async function submit() {
+    setErr(null); setBusy(true);
+    try {
+      const body = { kategori: f.kategori };
+      if (f.tgl) body.tgl = f.tgl;
+      if (f.modalitas) body.modalitas = f.modalitas;
+      if (f.kalurahan_id) body.kalurahan_id = f.kalurahan_id;
+      if (f.lokasi) body.lokasi = f.lokasi;
+      if (f.jumlah_sasaran) body.jumlah_sasaran = parseInt(f.jumlah_sasaran, 10);
+      if (f.keterangan) body.keterangan = f.keterangan;
+      const det = {};
+      fields.forEach((fl) => { const v = detail[fl.key]; if (v !== undefined && v !== "") det[fl.key] = fl.type === "number" ? parseFloat(v) : v; });
+      if (Object.keys(det).length) body.detail = det;
+      if (obatDipakai.length) body.obat = obatDipakai;
+      if (foto.length) body.foto = foto.map((x) => ({ key: x.key, content_type: x.content_type }));
+      const rec = await jpost("/kegiatan", body);
+      onCreated(rec);
+    } catch (e) { setErr(String(e.message || e)); } finally { setBusy(false); }
+  }
+
+  return (
+    <div style={{ ...card, display: "grid", gap: 10, background: "#fafafa" }}>
+      <strong>Catat Kegiatan Massal</strong>
+      <select style={inp} value={f.kategori} onChange={(e) => { setF({ ...f, kategori: e.target.value }); setDetail({}); }}>
+        {KEGIATAN_KATEGORI.map((k) => <option key={k} value={k}>{KATEGORI_LABEL[k] || k}</option>)}
+      </select>
+      <input style={inp} type="date" value={f.tgl} onChange={(e) => setF({ ...f, tgl: e.target.value })} />
+      <select style={inp} value={f.kalurahan_id} onChange={(e) => setF({ ...f, kalurahan_id: e.target.value })}>
+        <option value="">— Kalurahan (opsional) —</option>
+        {kalList.map((k) => <option key={k.id} value={k.id}>{k.nama}</option>)}
+      </select>
+      <div style={{ display: "flex", gap: 8 }}>
+        <input style={inp} placeholder="Lokasi/dusun (opsional)" value={f.lokasi} onChange={(e) => setF({ ...f, lokasi: e.target.value })} />
+        <input style={{ ...inp, width: 130 }} type="number" min="0" placeholder="Jml sasaran" value={f.jumlah_sasaran} onChange={(e) => setF({ ...f, jumlah_sasaran: e.target.value })} />
+      </div>
+      {fields.map((fl) => (
+        fl.type === "select" ? (
+          <select key={fl.key} style={inp} value={detail[fl.key] || ""} onChange={(e) => setDetail({ ...detail, [fl.key]: e.target.value })}>
+            <option value="">— {fl.label} —</option>
+            {fl.options.map((o) => <option key={o} value={o}>{o}</option>)}
+          </select>
+        ) : (
+          <input key={fl.key} style={inp} type={fl.type === "number" ? "number" : "text"} placeholder={fl.label}
+            value={detail[fl.key] ?? ""} onChange={(e) => setDetail({ ...detail, [fl.key]: e.target.value })} />
+        )
+      ))}
+      <select style={inp} value={f.modalitas} onChange={(e) => setF({ ...f, modalitas: e.target.value })}>
+        <option value="">— Modalitas —</option>
+        <option>Pasif</option><option>Aktif</option><option>Semiaktif</option><option>Yanduwan/Vaksinasi</option>
+      </select>
+
+      <div style={{ border: "1px solid #e3e3e3", borderRadius: 10, padding: 12, display: "grid", gap: 8 }}>
+        <div style={{ fontSize: 13, color: "#444", fontWeight: 500 }}>💊 Obat / vaksin / bahan (opsional)</div>
+        {obatDipakai.length > 0 && (
+          <div style={{ display: "grid", gap: 6 }}>
+            {obatDipakai.map((o, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, fontSize: 14, background: "#f6f6f6", borderRadius: 8, padding: "6px 10px" }}>
+                <span>{o.nama} — <strong>{o.jumlah} {o.satuan}</strong></span>
+                <button type="button" onClick={() => setObatDipakai((p) => p.filter((_, j) => j !== i))} style={{ ...btnGhost, padding: "2px 8px", fontSize: 12, color: "#c00", borderColor: "#e0b4b4" }}>Hapus</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <select style={{ ...inp, flex: "1 1 160px" }} value={obatSel} onChange={(e) => setObatSel(e.target.value)}>
+            <option value="">— Pilih obat/vaksin —</option>
+            {obatList.map((o) => <option key={o.id} value={o.id}>{o.nama_dagang}</option>)}
+          </select>
+          <input style={{ ...inp, width: 90 }} type="number" min="0" step="0.1" placeholder="Jumlah" value={obatJml} onChange={(e) => setObatJml(e.target.value)} />
+          <span style={{ alignSelf: "center", color: "#666", fontSize: 14, minWidth: 36 }}>{obatPilih ? obatPilih.satuan : ""}</span>
+          <button type="button" style={btnGhost} disabled={!obatPilih || !obatJml} onClick={tambahObat}>+ Tambah</button>
+        </div>
+      </div>
+
+      <input style={inp} placeholder="Keterangan (opsional)" value={f.keterangan} onChange={(e) => setF({ ...f, keterangan: e.target.value })} />
+      <div>
+        <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>Foto (opsional)</div>
+        {foto.length > 0 && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+            {foto.map((x, i) => (
+              <div key={x.key} style={{ position: "relative" }}>
+                <img src={x.preview} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8, border: "1px solid #ddd" }} />
+                <button type="button" onClick={() => setFoto((p) => p.filter((_, j) => j !== i))} style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", border: "none", background: "#c00", color: "#fff", cursor: "pointer", fontSize: 12, lineHeight: "20px", padding: 0 }}>×</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <label style={{ ...btnGhost, display: "inline-block" }}>
+          {uploading ? "Mengunggah…" : "📷 Tambah foto"}
+          <input type="file" accept="image/*" multiple style={{ display: "none" }} onChange={onPickFoto} disabled={uploading} />
+        </label>
+      </div>
+      {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button style={btn} disabled={busy || uploading} onClick={submit}>{busy ? "Menyimpan…" : "Simpan kegiatan"}</button>
+        <button style={btnGhost} onClick={onCancel}>Batal</button>
+      </div>
+    </div>
+  );
+}
+
+function KegiatanPage({ isAdmin }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const now = new Date();
+  const [periode, setPeriode] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    const [y, m] = periode.split("-");
+    jget(`/kegiatan?tahun=${parseInt(y, 10)}&bulan=${parseInt(m, 10)}`).then(setItems).catch(() => setItems([])).finally(() => setLoading(false));
+  }, [periode]);
+  useEffect(() => { load(); }, [load]);
+
+  async function hapus(id) {
+    if (!window.confirm("Hapus kegiatan ini?")) return;
+    try { await jdel(`/kegiatan/${id}`); load(); } catch (e) { window.alert(e.message || e); }
+  }
+
+  return (
+    <div style={{ display: "grid", gap: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <input style={{ ...inp, width: 160 }} type="month" value={periode} onChange={(e) => setPeriode(e.target.value)} />
+        <button style={btn} onClick={() => setShowForm((s) => !s)}>{showForm ? "Tutup" : "+ Catat kegiatan"}</button>
+      </div>
+      {showForm && <KegiatanForm onCancel={() => setShowForm(false)} onCreated={() => { setShowForm(false); load(); }} />}
+      {loading ? <div style={{ color: "#888" }}>Memuat…</div> : items.length === 0 ? (
+        <div style={{ ...card, color: "#888" }}>Belum ada kegiatan massal pada periode ini.</div>
+      ) : (
+        <div style={{ display: "grid", gap: 8 }}>
+          {items.map((k) => (
+            <div key={k.id} style={{ ...card, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+              <div>
+                <div style={{ fontWeight: 600 }}>{KATEGORI_LABEL[k.kategori] || k.kategori}{k.modalitas ? ` · ${k.modalitas}` : ""}</div>
+                <div style={{ fontSize: 13, color: "#666" }}>
+                  {k.tgl}{k.wilayah_nama ? ` · ${k.wilayah_nama}` : ""}{k.lokasi ? ` · ${k.lokasi}` : ""}{k.jumlah_sasaran ? ` · ${k.jumlah_sasaran} sasaran` : ""}
+                </div>
+                {k.keterangan && <div style={{ fontSize: 13, color: "#888", marginTop: 2 }}>{k.keterangan}</div>}
+              </div>
+              {isAdmin && <button style={{ ...btnGhost, color: "#c00", borderColor: "#e0b4b4", flexShrink: 0 }} onClick={() => hapus(k.id)}>Hapus</button>}
+            </div>
+          ))}
         </div>
       )}
     </div>
@@ -1788,12 +2157,16 @@ function Shell({ user, onLogout }) {
             <button style={tab === "pendaftaran" ? btn : btnGhost} onClick={() => { setTab("pendaftaran"); refreshPendaftaran(); }}>
               Pendaftaran{pendaftaranBaru ? ` (${pendaftaranBaru})` : ""}
             </button>
+            <button style={tab === "kegiatan" ? btn : btnGhost} onClick={() => setTab("kegiatan")}>Kegiatan</button>
             <button style={tab === "laporan" ? btn : btnGhost} onClick={() => setTab("laporan")}>Laporan</button>
+            <button style={tab === "qr" ? btn : btnGhost} onClick={() => setTab("qr")}>QR</button>
           </div>
           {tab === "peternak" && <PeternakPage isAdmin={user.roles.includes("admin")} />}
           {tab === "obat" && <ObatPage isAdmin={user.roles.includes("admin")} />}
           {tab === "pendaftaran" && <PendaftaranPage onConfirmed={refreshPendaftaran} />}
+          {tab === "kegiatan" && <KegiatanPage isAdmin={user.roles.includes("admin")} />}
           {tab === "laporan" && <LaporanPage />}
+          {tab === "qr" && <QRGenerator />}
         </>
       ) : (
         <div style={{ ...card, color: "#888" }}>Beranda peternak menyusul di slice berikutnya.</div>
