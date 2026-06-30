@@ -116,3 +116,11 @@ async def get_pelayanan(pid: str, _user=Depends(current_user)):
     if not d:
         raise HTTPException(404, "pelayanan tidak ditemukan")
     return d
+
+
+@router.delete("/{pid}")
+async def delete_pelayanan(pid: str, _user=Depends(require_roles("admin"))):
+    r = await get_db().pelayanan.delete_one({"id": pid})
+    if r.deleted_count == 0:
+        raise HTTPException(404, "pelayanan tidak ditemukan")
+    return {"ok": True}
