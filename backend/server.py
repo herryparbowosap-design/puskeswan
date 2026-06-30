@@ -19,6 +19,7 @@ import ternak
 import pelayanan
 import penyakit
 import ai
+import obat
 from auth import router as auth_router, admin_router
 
 
@@ -40,13 +41,14 @@ async def lifespan(app: FastAPI):
     await ensure_indexes(get_db())
     await seed.seed_master_if_empty()
     await seed.seed_ras_upsert()
+    await seed.seed_obat_if_empty()
     await seed.seed_wilayah_if_empty()
     await seed.seed_admin_if_missing()
     yield
     get_client().close()
 
 
-app = FastAPI(title="SIM Puskeswan", version="0.5.0", lifespan=lifespan)
+app = FastAPI(title="SIM Puskeswan", version="0.6.0", lifespan=lifespan)
 
 origins = [o for o in os.getenv("CORS_ORIGINS", "*").split(",") if o]
 app.add_middleware(
@@ -78,3 +80,4 @@ app.include_router(ternak.router, prefix="/api")
 app.include_router(pelayanan.router, prefix="/api")
 app.include_router(penyakit.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")
+app.include_router(obat.router, prefix="/api")
