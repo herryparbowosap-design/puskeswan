@@ -1369,6 +1369,24 @@ function LaporanPage() {
     a.click();
   }
 
+  async function unduhExcel() {
+    const [y, m] = periode.split("-");
+    let url = `/laporan/bulanan/xlsx?tahun=${parseInt(y, 10)}&bulan=${parseInt(m, 10)}`;
+    if (wil.kalurahan_id) url += `&kalurahan_id=${wil.kalurahan_id}`;
+    try {
+      setErr(null);
+      const r = await api(url);
+      if (!r.ok) throw new Error(`gagal unduh (${r.status})`);
+      const blob = await r.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `rekap-${y}-${m}.xlsx`;
+      a.click();
+    } catch (e) {
+      setErr(String(e.message || e));
+    }
+  }
+
   const ringkas = (obj) => Object.entries(obj || {}).map(([k, v]) => `${k}: ${v}`).join(" · ") || "—";
 
   return (
@@ -1376,6 +1394,7 @@ function LaporanPage() {
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
         <input style={{ ...inp, width: 170 }} type="month" value={periode} onChange={(e) => setPeriode(e.target.value)} />
         <button style={btn} disabled={loading} onClick={tampilkan}>{loading ? "Memuat…" : "Tampilkan"}</button>
+        {data && <button style={btn} onClick={unduhExcel}>⬇ Unduh Excel</button>}
         {data && <button style={btnGhost} onClick={unduhCSV}>⬇ Unduh CSV</button>}
       </div>
       <div>
