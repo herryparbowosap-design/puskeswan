@@ -932,7 +932,7 @@ function PelayananList({ peternakId, refreshKey, isAdmin }) {
       {items.map((p) => (
         <div key={p.id} style={card}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-            <strong style={{ fontSize: 14 }}>{p.tgl} · {p.kategori}</strong>
+            <strong style={{ fontSize: 14 }}>{p.tgl} · {p.kategori}{p.draft && <span style={{ marginLeft: 8, fontSize: 11, color: "#9a6b00", background: "#fff3d6", borderRadius: 999, padding: "2px 8px" }}>DRAFT — lengkapi</span>}</strong>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               {p.penyakit_id && <span style={{ fontSize: 13, color: "#0f6e56" }}>iSIKHNAS: {p.penyakit_id}</span>}
               {isAdmin && <button style={{ ...btnGhost, padding: "2px 8px", fontSize: 12, color: "#c00", borderColor: "#e0b4b4" }} onClick={() => hapus(p)}>Hapus</button>}
