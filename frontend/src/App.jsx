@@ -646,6 +646,19 @@ function PelayananForm({ peternak, onCreated, onCancel }) {
   );
 }
 
+function FotoThumb({ fotoKey }) {
+  const [url, setUrl] = useState(null);
+  useEffect(() => {
+    jget(`/foto/url?key=${encodeURIComponent(fotoKey)}`).then((d) => setUrl(d.url)).catch(() => {});
+  }, [fotoKey]);
+  if (!url) return <div style={{ width: 56, height: 56, borderRadius: 8, background: "#eee" }} />;
+  return (
+    <a href={url} target="_blank" rel="noreferrer">
+      <img src={url} alt="" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8, border: "1px solid #ddd" }} />
+    </a>
+  );
+}
+
 function PelayananList({ peternakId, refreshKey, isAdmin }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
