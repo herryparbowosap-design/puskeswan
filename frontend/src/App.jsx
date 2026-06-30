@@ -1559,6 +1559,48 @@ function SeksiTabel({ judul, kolom, baris }) {
   );
 }
 
+function RincianKategoriView({ rinc }) {
+  const keys = Object.keys(rinc || {});
+  if (!keys.length) return null;
+  return (
+    <div style={{ ...card, display: "grid", gap: 14 }}>
+      <strong style={{ fontSize: 14 }}>Rincian per kategori</strong>
+      {keys.map((kat) => {
+        const isi = rinc[kat];
+        const ringkas = isi.ringkas || {};
+        return (
+          <div key={kat} style={{ borderTop: "1px solid #eee", paddingTop: 10 }}>
+            <div style={{ fontWeight: 600, color: "#0f6e56", marginBottom: 6 }}>{KATEGORI_LABEL[kat] || kat}</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+              {Object.entries(ringkas).map(([k, v]) => (
+                <span key={k} style={{ background: "#eef5f2", color: "#0f6e56", borderRadius: 999, padding: "3px 10px", fontSize: 13 }}>
+                  {k}: <strong>{v}</strong>
+                </span>
+              ))}
+            </div>
+            {(isi.tabel || []).map((tb, i) => (
+              <table key={i} style={{ width: "100%", borderCollapse: "collapse", marginTop: 4, fontSize: 13 }}>
+                <thead>
+                  <tr>{tb.kolom.map((k, j) => (
+                    <th key={j} style={{ textAlign: j === tb.kolom.length - 1 ? "right" : "left", color: "#999", fontWeight: 500, padding: "3px 0", borderBottom: "1px solid #eee" }}>{k}</th>
+                  ))}</tr>
+                </thead>
+                <tbody>
+                  {tb.baris.map((b, r) => (
+                    <tr key={r}>{b.map((c, j) => (
+                      <td key={j} style={{ textAlign: j === b.length - 1 ? "right" : "left", padding: "3px 0", borderBottom: "1px solid #f5f5f5" }}>{c}</td>
+                    ))}</tr>
+                  ))}
+                </tbody>
+              </table>
+            ))}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function LaporanPage() {
   const now = new Date();
   const [periode, setPeriode] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
@@ -1615,6 +1657,16 @@ function LaporanPage() {
     push("");
     push("Pemakaian obat"); push("Obat", "Jumlah", "Satuan");
     data.obat.forEach((x) => push(x.nama, x.jumlah, x.satuan));
+    const rinc = data.pelayanan.rincian_kategori || {};
+    Object.keys(rinc).forEach((kat) => {
+      push("");
+      push(`Rincian — ${KATEGORI_LABEL[kat] || kat}`);
+      Object.entries(rinc[kat].ringkas || {}).forEach(([k, v]) => push(k, v));
+      (rinc[kat].tabel || []).forEach((tb) => {
+        push(...tb.kolom);
+        tb.baris.forEach((b) => push(...b));
+      });
+    });
     const blob = new Blob(["\ufeff" + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -1680,6 +1732,7 @@ function LaporanPage() {
             baris={data.pelayanan.per_petugas.map((x) => [x.nama, x.jumlah])} />
           <SeksiTabel judul="Pemakaian obat" kolom={["Obat", "Jumlah", "Satuan"]}
             baris={data.obat.map((x) => [x.nama, x.jumlah, x.satuan])} />
+          <RincianKategoriView rinc={data.pelayanan.rincian_kategori} />
           {data.pelayanan.total === 0 && <div style={{ color: "#888" }}>Tidak ada pelayanan pada periode ini.</div>}
         </div>
       )}
