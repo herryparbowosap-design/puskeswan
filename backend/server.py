@@ -20,6 +20,7 @@ import pelayanan
 import penyakit
 import ai
 import obat
+import pendaftaran
 from auth import router as auth_router, admin_router
 
 
@@ -48,7 +49,7 @@ async def lifespan(app: FastAPI):
     get_client().close()
 
 
-app = FastAPI(title="SIM Puskeswan", version="0.6.0", lifespan=lifespan)
+app = FastAPI(title="SIM Puskeswan", version="0.7.0", lifespan=lifespan)
 
 origins = [o for o in os.getenv("CORS_ORIGINS", "*").split(",") if o]
 app.add_middleware(
@@ -81,3 +82,4 @@ app.include_router(pelayanan.router, prefix="/api")
 app.include_router(penyakit.router, prefix="/api")
 app.include_router(ai.router, prefix="/api")
 app.include_router(obat.router, prefix="/api")
+app.include_router(pendaftaran.router, prefix="/api")
