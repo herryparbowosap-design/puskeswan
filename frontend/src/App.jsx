@@ -25,6 +25,15 @@ async function jpost(path, body) {
   return r.json();
 }
 
+// Upload 1 file ke S3 lewat presigned URL: minta tiket → PUT byte langsung ke S3.
+async function uploadFoto(file, prefix) {
+  const ct = file.type || "image/jpeg";
+  const presign = await jpost("/foto/presign-upload", { prefix, filename: file.name, content_type: ct });
+  const put = await fetch(presign.upload_url, { method: "PUT", headers: { "Content-Type": ct }, body: file });
+  if (!put.ok) throw new Error(`upload foto gagal (${put.status})`);
+  return { key: presign.key, content_type: ct };
+}
+
 const inp = { padding: 10, borderRadius: 8, border: "1px solid #ccc", fontSize: 15, width: "100%", boxSizing: "border-box" };
 const btn = { padding: "10px 14px", borderRadius: 8, border: "none", background: "#0f6e56", color: "#fff", fontSize: 15, cursor: "pointer" };
 const btnGhost = { padding: "8px 12px", borderRadius: 8, border: "1px solid #ccc", background: "#fff", fontSize: 14, cursor: "pointer" };
@@ -326,8 +335,28 @@ function PelayananForm({ peternak, onCreated, onCancel }) {
     diagnosa_teks: "", tindakan: "", prognosa: "", metode_layanan: "Kunjungan Lapangan", keterangan: "",
   });
   const [penyakit, setPenyakit] = useState(null);
+  const [foto, setFoto] = useState([]);
+  const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
+
+  async function onPickFoto(e) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (!files.length) return;
+    setErr(null);
+    setUploading(true);
+    try {
+      for (const file of files) {
+        const up = await uploadFoto(file, "pelayanan/baru");
+        setFoto((prev) => [...prev, { ...up, preview: URL.createObjectURL(file) }]);
+      }
+    } catch (e2) {
+      setErr(String(e2.message || e2));
+    } finally {
+      setUploading(false);
+    }
+  }
 
   async function submit() {
     setErr(null);
@@ -342,6 +371,7 @@ function PelayananForm({ peternak, onCreated, onCancel }) {
       if (f.metode_layanan) body.metode_layanan = f.metode_layanan;
       if (f.keterangan) body.keterangan = f.keterangan;
       if (f.jenis_hewan) body.hewan = { jenis_hewan: f.jenis_hewan, jumlah: parseInt(f.jumlah, 10) || 1 };
+      if (foto.length) body.foto = foto.map((x) => ({ key: x.key, content_type: x.content_type }));
       const rec = await jpost("/pelayanan", body);
       onCreated(rec);
     } catch (e) {
@@ -376,12 +406,45 @@ function PelayananForm({ peternak, onCreated, onCancel }) {
         </select>
       </div>
       <input style={inp} placeholder="Keterangan (opsional)" value={f.keterangan} onChange={(e) => setF({ ...f, keterangan: e.target.value })} />
+
+      <div>
+        <div style={{ fontSize: 13, color: "#666", marginBottom: 6 }}>Foto kasus (opsional)</div>
+        {foto.length > 0 && (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+            {foto.map((x, i) => (
+              <div key={x.key} style={{ position: "relative" }}>
+                <img src={x.preview} alt="" style={{ width: 64, height: 64, objectFit: "cover", borderRadius: 8, border: "1px solid #ddd" }} />
+                <button type="button" onClick={() => setFoto((p) => p.filter((_, j) => j !== i))}
+                  style={{ position: "absolute", top: -6, right: -6, width: 20, height: 20, borderRadius: "50%", border: "none", background: "#c00", color: "#fff", cursor: "pointer", fontSize: 12, lineHeight: "20px", padding: 0 }}>×</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <label style={{ ...btnGhost, display: "inline-block" }}>
+          {uploading ? "Mengunggah…" : "📷 Tambah foto"}
+          <input type="file" accept="image/*" multiple style={{ display: "none" }} onChange={onPickFoto} disabled={uploading} />
+        </label>
+      </div>
+
       {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
       <div style={{ display: "flex", gap: 8 }}>
-        <button style={btn} disabled={busy} onClick={submit}>{busy ? "Menyimpan…" : "Simpan pelayanan"}</button>
+        <button style={btn} disabled={busy || uploading} onClick={submit}>{busy ? "Menyimpan…" : "Simpan pelayanan"}</button>
         <button style={btnGhost} onClick={onCancel}>Batal</button>
       </div>
     </div>
+  );
+}
+
+function FotoThumb({ fotoKey }) {
+  const [url, setUrl] = useState(null);
+  useEffect(() => {
+    jget(`/foto/url?key=${encodeURIComponent(fotoKey)}`).then((d) => setUrl(d.url)).catch(() => {});
+  }, [fotoKey]);
+  if (!url) return <div style={{ width: 56, height: 56, borderRadius: 8, background: "#eee" }} />;
+  return (
+    <a href={url} target="_blank" rel="noreferrer">
+      <img src={url} alt="" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 8, border: "1px solid #ddd" }} />
+    </a>
   );
 }
 
@@ -408,6 +471,11 @@ function PelayananList({ peternakId, refreshKey }) {
           {p.hewan && <div style={{ fontSize: 13, color: "#666" }}>{p.hewan.jenis_hewan} · {p.hewan.jumlah} ekor</div>}
           {p.diagnosa_teks && <div style={{ fontSize: 14, marginTop: 4 }}>Dx: {p.diagnosa_teks}</div>}
           {p.tindakan && <div style={{ fontSize: 14 }}>Tx: {p.tindakan}</div>}
+          {p.foto && p.foto.length > 0 && (
+            <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+              {p.foto.map((x) => <FotoThumb key={x.key} fotoKey={x.key} />)}
+            </div>
+          )}
           {(p.prognosa || p.metode_layanan) && (
             <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>{[p.prognosa, p.metode_layanan].filter(Boolean).join(" · ")}</div>
           )}
