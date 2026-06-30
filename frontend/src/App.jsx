@@ -34,6 +34,21 @@ async function uploadFoto(file, prefix) {
   return { key: presign.key, content_type: ct };
 }
 
+async function jpatch(path, body) {
+  const r = await api(path, { method: "PATCH", body: JSON.stringify(body) });
+  if (!r.ok) throw new Error(((await r.json().catch(() => ({}))).detail) || `gagal (${r.status})`);
+  return r.json();
+}
+async function jdel(path) {
+  const r = await api(path, { method: "DELETE" });
+  if (!r.ok) {
+    const e = new Error(((await r.json().catch(() => ({}))).detail) || `gagal (${r.status})`);
+    e.status = r.status;
+    throw e;
+  }
+  return r.json();
+}
+
 const inp = { padding: 10, borderRadius: 8, border: "1px solid #ccc", fontSize: 15, width: "100%", boxSizing: "border-box" };
 const btn = { padding: "10px 14px", borderRadius: 8, border: "none", background: "#0f6e56", color: "#fff", fontSize: 15, cursor: "pointer" };
 const btnGhost = { padding: "8px 12px", borderRadius: 8, border: "1px solid #ccc", background: "#fff", fontSize: 14, cursor: "pointer" };
@@ -111,10 +126,18 @@ function WilayahCascade({ value, onChange }) {
   );
 }
 
-function PeternakForm({ onCreated, onCancel }) {
-  const [f, setF] = useState({ nama: "", kontak: "", nik: "", alamat_detail: "", catatan: "" });
-  const [wil, setWil] = useState({ kapanewon_id: null, kalurahan_id: null, padukuhan_id: null });
-  const [koord, setKoord] = useState(null);
+function PeternakForm({ initial, onSaved, onCancel }) {
+  const isEdit = !!initial;
+  const [f, setF] = useState({
+    nama: initial?.nama || "", kontak: initial?.kontak || "", nik: initial?.nik || "",
+    alamat_detail: initial?.alamat_detail || "", catatan: initial?.catatan || "",
+  });
+  const [wil, setWil] = useState({
+    kapanewon_id: initial?.kapanewon_id || null, kalurahan_id: initial?.kalurahan_id || null, padukuhan_id: initial?.padukuhan_id || null,
+  });
+  const [koord, setKoord] = useState(
+    initial?.koordinat ? { lat: initial.koordinat.coordinates[1], lng: initial.koordinat.coordinates[0] } : null
+  );
   const [gps, setGps] = useState("");
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -136,8 +159,8 @@ function PeternakForm({ onCreated, onCancel }) {
       const body = { ...f, ...wil };
       if (!body.nik) delete body.nik;
       if (koord) body.koordinat = koord;
-      const p = await jpost("/peternak", body);
-      onCreated(p);
+      const p = isEdit ? await jpatch(`/peternak/${initial.id}`, body) : await jpost("/peternak", body);
+      onSaved(p);
     } catch (e) {
       setErr(String(e.message || e));
     } finally {
@@ -147,7 +170,7 @@ function PeternakForm({ onCreated, onCancel }) {
 
   return (
     <div style={{ ...card, display: "grid", gap: 10 }}>
-      <strong>Tambah Peternak</strong>
+      <strong>{isEdit ? "Edit Peternak" : "Tambah Peternak"}</strong>
       <input style={inp} placeholder="Nama *" value={f.nama} onChange={(e) => setF({ ...f, nama: e.target.value })} />
       <input style={inp} placeholder="No. WA / kontak *" value={f.kontak} onChange={(e) => setF({ ...f, kontak: e.target.value })} />
       <input style={inp} placeholder="NIK (opsional)" value={f.nik} onChange={(e) => setF({ ...f, nik: e.target.value })} />
@@ -161,7 +184,7 @@ function PeternakForm({ onCreated, onCancel }) {
       </div>
       {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
       <div style={{ display: "flex", gap: 8 }}>
-        <button style={btn} disabled={busy || !f.nama || !f.kontak} onClick={submit}>{busy ? "Menyimpan…" : "Simpan"}</button>
+        <button style={btn} disabled={busy || !f.nama || !f.kontak} onClick={submit}>{busy ? "Menyimpan…" : (isEdit ? "Simpan perubahan" : "Simpan")}</button>
         <button style={btnGhost} onClick={onCancel}>Batal</button>
       </div>
     </div>
@@ -240,7 +263,7 @@ function TernakForm({ peternakId, onCreated, onCancel }) {
   );
 }
 
-function TernakList({ peternakId, refreshKey }) {
+function TernakList({ peternakId, refreshKey, isAdmin }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -255,6 +278,16 @@ function TernakList({ peternakId, refreshKey }) {
     if (!window.confirm(`Tandai ternak ini ${label}?`)) return;
     try {
       await jpost(`/ternak/${t.id}/mutasi`, { jenis });
+      load();
+    } catch (e) {
+      window.alert(e.message || e);
+    }
+  }
+
+  async function hapus(t) {
+    if (!window.confirm(`Hapus ternak ${t.spesies}${t.eartag ? " " + t.eartag : ""}? Permanen.`)) return;
+    try {
+      await jdel(`/ternak/${t.id}`);
       load();
     } catch (e) {
       window.alert(e.message || e);
@@ -277,13 +310,16 @@ function TernakList({ peternakId, refreshKey }) {
               {t.jenis_kelamin ? ` · ${t.jenis_kelamin}` : ""}
             </div>
           </div>
-          {t.status === "aktif" && (
-            <div style={{ display: "flex", gap: 6 }}>
-              <button style={btnGhost} onClick={() => mutasi(t, "jual")}>Jual</button>
-              <button style={btnGhost} onClick={() => mutasi(t, "mati")}>Mati</button>
-              <button style={btnGhost} onClick={() => mutasi(t, "potong")}>Potong</button>
-            </div>
-          )}
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {t.status === "aktif" && (
+              <>
+                <button style={btnGhost} onClick={() => mutasi(t, "jual")}>Jual</button>
+                <button style={btnGhost} onClick={() => mutasi(t, "mati")}>Mati</button>
+                <button style={btnGhost} onClick={() => mutasi(t, "potong")}>Potong</button>
+              </>
+            )}
+            {isAdmin && <button style={{ ...btnGhost, color: "#c00", borderColor: "#e0b4b4" }} onClick={() => hapus(t)}>Hapus</button>}
+          </div>
         </div>
       ))}
     </div>
@@ -495,14 +531,25 @@ function FotoThumb({ fotoKey }) {
   );
 }
 
-function PelayananList({ peternakId, refreshKey }) {
+function PelayananList({ peternakId, refreshKey, isAdmin }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const load = useCallback(() => {
     setLoading(true);
     jget(`/pelayanan?peternak_id=${peternakId}`).then(setItems).catch(() => setItems([])).finally(() => setLoading(false));
-  }, [peternakId, refreshKey]);
+  }, [peternakId]);
+  useEffect(() => { load(); }, [load, refreshKey]);
+
+  async function hapus(p) {
+    if (!window.confirm(`Hapus pelayanan ${p.tgl}${p.penyakit_id ? " (" + p.penyakit_id + ")" : ""}? Permanen.`)) return;
+    try {
+      await jdel(`/pelayanan/${p.id}`);
+      load();
+    } catch (e) {
+      window.alert(e.message || e);
+    }
+  }
 
   if (loading) return <div style={{ color: "#888" }}>memuat riwayat…</div>;
   if (!items.length) return <div style={{ color: "#888" }}>Belum ada pelayanan tercatat.</div>;
@@ -511,9 +558,12 @@ function PelayananList({ peternakId, refreshKey }) {
     <div style={{ display: "grid", gap: 8 }}>
       {items.map((p) => (
         <div key={p.id} style={card}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
             <strong style={{ fontSize: 14 }}>{p.tgl} · {p.kategori}</strong>
-            {p.penyakit_id && <span style={{ fontSize: 13, color: "#0f6e56" }}>iSIKHNAS: {p.penyakit_id}</span>}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {p.penyakit_id && <span style={{ fontSize: 13, color: "#0f6e56" }}>iSIKHNAS: {p.penyakit_id}</span>}
+              {isAdmin && <button style={{ ...btnGhost, padding: "2px 8px", fontSize: 12, color: "#c00", borderColor: "#e0b4b4" }} onClick={() => hapus(p)}>Hapus</button>}
+            </div>
           </div>
           {p.hewan && <div style={{ fontSize: 13, color: "#666" }}>{p.hewan.jenis_hewan} · {p.hewan.jumlah} ekor</div>}
           {p.diagnosa_teks && <div style={{ fontSize: 14, marginTop: 4 }}>Dx: {p.diagnosa_teks}</div>}
@@ -532,46 +582,89 @@ function PelayananList({ peternakId, refreshKey }) {
   );
 }
 
-function PeternakDetail({ peternak, onBack }) {
+function PeternakDetail({ peternak, isAdmin, onBack, onUpdated }) {
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [showPel, setShowPel] = useState(false);
   const [pelKey, setPelKey] = useState(0);
+  const [editing, setEditing] = useState(false);
+  const [pet, setPet] = useState(peternak);
+
+  async function hapusPeternak() {
+    if (!window.confirm(`Hapus peternak "${pet.nama}"? Tindakan ini permanen.`)) return;
+    try {
+      await jdel(`/peternak/${pet.id}`);
+      onUpdated && onUpdated();
+      onBack();
+    } catch (e) {
+      if (e.status === 409) {
+        if (window.confirm(`${e.message}\n\nHapus PAKSA peternak ini beserta SEMUA ternak & pelayanannya?`)) {
+          try {
+            await jdel(`/peternak/${pet.id}?cascade=true`);
+            onUpdated && onUpdated();
+            onBack();
+          } catch (e2) {
+            window.alert(e2.message || e2);
+          }
+        }
+      } else {
+        window.alert(e.message || e);
+      }
+    }
+  }
+
+  if (editing) {
+    return (
+      <div style={{ display: "grid", gap: 14 }}>
+        <button style={btnGhost} onClick={() => setEditing(false)}>← Batal edit</button>
+        <PeternakForm initial={pet} onCancel={() => setEditing(false)}
+          onSaved={(p) => { setPet(p); setEditing(false); onUpdated && onUpdated(); }} />
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
       <button style={btnGhost} onClick={onBack}>← Kembali ke daftar</button>
       <div style={card}>
-        <h2 style={{ margin: "0 0 4px" }}>{peternak.nama}</h2>
-        <div style={{ color: "#666", fontSize: 14 }}>{peternak.kontak}{peternak.nik ? ` · NIK ${peternak.nik}` : ""}</div>
-        {peternak.koordinat && (
-          <a style={{ fontSize: 14, color: "#0f6e56" }} target="_blank" rel="noreferrer"
-            href={`https://www.google.com/maps/dir/?api=1&destination=${peternak.koordinat.coordinates[1]},${peternak.koordinat.coordinates[0]}`}>
-            📍 Buka rute di Google Maps
-          </a>
-        )}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+          <div>
+            <h2 style={{ margin: "0 0 4px" }}>{pet.nama}</h2>
+            <div style={{ color: "#666", fontSize: 14 }}>{pet.kontak}{pet.nik ? ` · NIK ${pet.nik}` : ""}</div>
+            {pet.koordinat && (
+              <a style={{ fontSize: 14, color: "#0f6e56" }} target="_blank" rel="noreferrer"
+                href={`https://www.google.com/maps/dir/?api=1&destination=${pet.koordinat.coordinates[1]},${pet.koordinat.coordinates[0]}`}>
+                📍 Buka rute di Google Maps
+              </a>
+            )}
+          </div>
+          <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+            <button style={btnGhost} onClick={() => setEditing(true)}>Edit</button>
+            {isAdmin && <button style={{ ...btnGhost, color: "#c00", borderColor: "#e0b4b4" }} onClick={hapusPeternak}>Hapus</button>}
+          </div>
+        </div>
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <strong>Ternak</strong>
         <button style={btn} onClick={() => setShowForm((s) => !s)}>{showForm ? "Tutup" : "+ Tambah ternak"}</button>
       </div>
-      {showForm && <TernakForm peternakId={peternak.id} onCancel={() => setShowForm(false)}
+      {showForm && <TernakForm peternakId={pet.id} onCancel={() => setShowForm(false)}
         onCreated={() => { setShowForm(false); setRefreshKey((k) => k + 1); }} />}
-      <TernakList peternakId={peternak.id} refreshKey={refreshKey} />
+      <TernakList peternakId={pet.id} refreshKey={refreshKey} isAdmin={isAdmin} />
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
         <strong>Riwayat Pelayanan</strong>
         <button style={btn} onClick={() => setShowPel((s) => !s)}>{showPel ? "Tutup" : "+ Catat pelayanan"}</button>
       </div>
-      {showPel && <PelayananForm peternak={peternak} onCancel={() => setShowPel(false)}
+      {showPel && <PelayananForm peternak={pet} onCancel={() => setShowPel(false)}
         onCreated={() => { setShowPel(false); setPelKey((k) => k + 1); }} />}
-      <PelayananList peternakId={peternak.id} refreshKey={pelKey} />
+      <PelayananList peternakId={pet.id} refreshKey={pelKey} isAdmin={isAdmin} />
     </div>
   );
 }
 
-function PeternakPage() {
+function PeternakPage({ isAdmin }) {
   const [q, setQ] = useState("");
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -588,7 +681,7 @@ function PeternakPage() {
     return () => clearTimeout(id);
   }, [q, load]);
 
-  if (selected) return <PeternakDetail peternak={selected} onBack={() => { setSelected(null); load(q); }} />;
+  if (selected) return <PeternakDetail peternak={selected} isAdmin={isAdmin} onUpdated={() => load(q)} onBack={() => { setSelected(null); load(q); }} />;
 
   return (
     <div style={{ display: "grid", gap: 12 }}>
@@ -596,7 +689,7 @@ function PeternakPage() {
         <input style={inp} placeholder="Cari peternak (nama/kontak/NIK)…" value={q} onChange={(e) => setQ(e.target.value)} />
         <button style={btn} onClick={() => setShowForm((s) => !s)}>{showForm ? "Tutup" : "+ Peternak"}</button>
       </div>
-      {showForm && <PeternakForm onCancel={() => setShowForm(false)} onCreated={(p) => { setShowForm(false); setSelected(p); }} />}
+      {showForm && <PeternakForm onCancel={() => setShowForm(false)} onSaved={(p) => { setShowForm(false); setSelected(p); load(q); }} />}
       {loading ? <div style={{ color: "#888" }}>memuat…</div> : (
         <div style={{ display: "grid", gap: 8 }}>
           {items.length === 0 && <div style={{ color: "#888" }}>Belum ada peternak{q ? " yang cocok" : ""}.</div>}
@@ -650,7 +743,7 @@ function Shell({ user, onLogout }) {
         <button onClick={onLogout} style={btnGhost}>Keluar</button>
       </div>
       {(role === "admin" || role === "petugas") ? (
-        <PeternakPage />
+        <PeternakPage isAdmin={user.roles.includes("admin")} />
       ) : (
         <div style={{ ...card, color: "#888" }}>Beranda peternak menyusul di slice berikutnya.</div>
       )}
