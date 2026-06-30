@@ -28,11 +28,21 @@ class HewanIn(BaseModel):
     jumlah: int = 1
 
 
+class ObatPakaiIn(BaseModel):
+    obat_id: Optional[str] = None
+    nama: str                                 # snapshot nama dagang
+    jumlah: float
+    satuan: str                               # snapshot satuan (ml/tablet/…)
+    catatan: Optional[str] = None             # mis. "20 mg/kg × 300 kg ÷ 200 mg/ml"
+
+
 class PelayananIn(BaseModel):
     kategori: str = "KESWAN"
     tgl: Optional[str] = None                 # ISO YYYY-MM-DD; default hari ini
     peternak_id: str
     hewan: Optional[HewanIn] = None
+    berat_kg: Optional[float] = None
+    obat: Optional[list[ObatPakaiIn]] = None
     penyakit_id: Optional[str] = None         # = kode iSIKHNAS (mis. "ND")
     diagnosa_teks: Optional[str] = None
     isikhnas_id: Optional[str] = None
@@ -64,6 +74,8 @@ async def create_pelayanan(body: PelayananIn, user=Depends(require_roles("petuga
             "alamat": p.get("alamat_detail"),
         },
         "hewan": body.hewan.model_dump() if body.hewan else None,
+        "berat_kg": body.berat_kg,
+        "obat": [o.model_dump() for o in (body.obat or [])],
         "penyakit_id": body.penyakit_id,
         "diagnosa_teks": body.diagnosa_teks,
         "isikhnas_id": body.isikhnas_id,
