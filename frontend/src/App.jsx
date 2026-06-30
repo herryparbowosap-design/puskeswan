@@ -827,8 +827,151 @@ function PeternakPage({ isAdmin }) {
   );
 }
 
+function ObatForm({ initial, onSaved, onCancel }) {
+  const isEdit = !!initial;
+  const [f, setF] = useState({
+    nama_dagang: initial?.nama_dagang || "",
+    zat_aktif: initial?.zat_aktif || "",
+    konsentrasi: initial?.konsentrasi ?? "",
+    satuan: initial?.satuan || "ml",
+    dosis_per_kg: initial?.dosis_per_kg ?? "",
+    rute: initial?.rute || "",
+    waktu_henti_daging_hari: initial?.waktu_henti_daging_hari ?? "",
+    waktu_henti_susu_jam: initial?.waktu_henti_susu_jam ?? "",
+    aktif: initial?.aktif ?? true,
+  });
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  const num = (v) => (v === "" || v === null ? null : parseFloat(v));
+  const int = (v) => (v === "" || v === null ? null : parseInt(v, 10));
+
+  async function submit() {
+    setErr(null);
+    setBusy(true);
+    try {
+      const body = {
+        nama_dagang: f.nama_dagang,
+        zat_aktif: f.zat_aktif || null,
+        konsentrasi: num(f.konsentrasi),
+        satuan: f.satuan || "ml",
+        dosis_per_kg: num(f.dosis_per_kg),
+        rute: f.rute || null,
+        waktu_henti_daging_hari: int(f.waktu_henti_daging_hari),
+        waktu_henti_susu_jam: int(f.waktu_henti_susu_jam),
+        aktif: f.aktif,
+      };
+      const o = isEdit ? await jpatch(`/obat/${initial.id}`, body) : await jpost("/obat", body);
+      onSaved(o);
+    } catch (e) {
+      setErr(String(e.message || e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div style={{ ...card, display: "grid", gap: 10, background: "#fafafa" }}>
+      <strong>{isEdit ? "Edit Obat" : "Tambah Obat"}</strong>
+      <input style={inp} placeholder="Nama dagang *" value={f.nama_dagang} onChange={(e) => setF({ ...f, nama_dagang: e.target.value })} />
+      <input style={inp} placeholder="Zat aktif (mis. Oksitetrasiklin)" value={f.zat_aktif} onChange={(e) => setF({ ...f, zat_aktif: e.target.value })} />
+      <div style={{ display: "flex", gap: 8 }}>
+        <input style={inp} type="number" step="0.01" placeholder="Konsentrasi (mg per satuan)" value={f.konsentrasi} onChange={(e) => setF({ ...f, konsentrasi: e.target.value })} />
+        <select style={{ ...inp, width: 130 }} value={f.satuan} onChange={(e) => setF({ ...f, satuan: e.target.value })}>
+          <option value="ml">ml</option><option value="tablet">tablet</option><option value="bolus">bolus</option>
+          <option value="sachet">sachet</option><option value="kapsul">kapsul</option><option value="gram">gram</option>
+        </select>
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <input style={inp} type="number" step="0.01" placeholder="Dosis (mg/kg)" value={f.dosis_per_kg} onChange={(e) => setF({ ...f, dosis_per_kg: e.target.value })} />
+        <select style={{ ...inp, width: 130 }} value={f.rute} onChange={(e) => setF({ ...f, rute: e.target.value })}>
+          <option value="">— Rute —</option>
+          <option>IM</option><option>IV</option><option>SC</option><option>IM/IV</option><option>oral</option><option>topikal</option>
+        </select>
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <input style={inp} type="number" placeholder="Waktu henti daging (hari)" value={f.waktu_henti_daging_hari} onChange={(e) => setF({ ...f, waktu_henti_daging_hari: e.target.value })} />
+        <input style={inp} type="number" placeholder="Waktu henti susu (jam)" value={f.waktu_henti_susu_jam} onChange={(e) => setF({ ...f, waktu_henti_susu_jam: e.target.value })} />
+      </div>
+      <label style={{ fontSize: 14, display: "flex", gap: 8, alignItems: "center" }}>
+        <input type="checkbox" checked={f.aktif} onChange={(e) => setF({ ...f, aktif: e.target.checked })} /> Aktif (tampil di pilihan obat saat pelayanan)
+      </label>
+      <div style={{ fontSize: 12, color: "#999" }}>Konsentrasi = mg per 1 satuan (mis. 200 = 200 mg/ml). Konsentrasi + dosis/kg diperlukan agar saran dosis otomatis bisa dihitung.</div>
+      {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button style={btn} disabled={busy || !f.nama_dagang} onClick={submit}>{busy ? "Menyimpan…" : (isEdit ? "Simpan perubahan" : "Simpan")}</button>
+        <button style={btnGhost} onClick={onCancel}>Batal</button>
+      </div>
+    </div>
+  );
+}
+
+function ObatPage({ isAdmin }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState(null);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    jget("/obat?semua=true").then(setItems).catch(() => setItems([])).finally(() => setLoading(false));
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  async function hapus(o) {
+    if (!window.confirm(`Hapus obat "${o.nama_dagang}"? Permanen.`)) return;
+    try {
+      await jdel(`/obat/${o.id}`);
+      load();
+    } catch (e) {
+      window.alert(e.message || e);
+    }
+  }
+
+  if (editing) return <ObatForm initial={editing} onCancel={() => setEditing(null)} onSaved={() => { setEditing(null); load(); }} />;
+
+  return (
+    <div style={{ display: "grid", gap: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <strong>Daftar Obat (formularium)</strong>
+        <button style={btn} onClick={() => setShowForm((s) => !s)}>{showForm ? "Tutup" : "+ Tambah obat"}</button>
+      </div>
+      {showForm && <ObatForm onCancel={() => setShowForm(false)} onSaved={() => { setShowForm(false); load(); }} />}
+      {loading ? <div style={{ color: "#888" }}>memuat…</div> : !items.length ? <div style={{ color: "#888" }}>Belum ada obat.</div> : (
+        <div style={{ display: "grid", gap: 8 }}>
+          {items.map((o) => (
+            <div key={o.id} style={{ ...card, display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start", opacity: o.aktif === false ? 0.5 : 1 }}>
+              <div>
+                <div style={{ fontWeight: 500 }}>{o.nama_dagang}{o.aktif === false ? " (nonaktif)" : ""}</div>
+                <div style={{ fontSize: 13, color: "#666" }}>
+                  {o.zat_aktif || "—"}
+                  {o.konsentrasi != null ? ` · ${o.konsentrasi} mg/${o.satuan}` : ""}
+                  {o.dosis_per_kg != null ? ` · ${o.dosis_per_kg} mg/kg` : ""}
+                  {o.rute ? ` · ${o.rute}` : ""}
+                </div>
+                {(o.waktu_henti_daging_hari != null || o.waktu_henti_susu_jam != null) && (
+                  <div style={{ fontSize: 12, color: "#a33" }}>
+                    Waktu henti: {o.waktu_henti_daging_hari != null ? `daging ${o.waktu_henti_daging_hari} hari` : ""}
+                    {o.waktu_henti_daging_hari != null && o.waktu_henti_susu_jam != null ? ", " : ""}
+                    {o.waktu_henti_susu_jam != null ? `susu ${o.waktu_henti_susu_jam} jam` : ""}
+                  </div>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                <button style={btnGhost} onClick={() => setEditing(o)}>Edit</button>
+                {isAdmin && <button style={{ ...btnGhost, color: "#c00", borderColor: "#e0b4b4" }} onClick={() => hapus(o)}>Hapus</button>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Shell({ user, onLogout }) {
   const [role, setRole] = useState(user.roles.length === 1 ? user.roles[0] : null);
+  const [tab, setTab] = useState("peternak");
   const judul = { admin: "Beranda Admin", petugas: "Beranda Petugas", peternak: "Beranda Peternak" };
 
   if (!role) {
@@ -862,7 +1005,15 @@ function Shell({ user, onLogout }) {
         <button onClick={onLogout} style={btnGhost}>Keluar</button>
       </div>
       {(role === "admin" || role === "petugas") ? (
-        <PeternakPage isAdmin={user.roles.includes("admin")} />
+        <>
+          <div style={{ display: "flex", gap: 8, marginBottom: 14 }}>
+            <button style={tab === "peternak" ? btn : btnGhost} onClick={() => setTab("peternak")}>Peternak</button>
+            <button style={tab === "obat" ? btn : btnGhost} onClick={() => setTab("obat")}>Obat</button>
+          </div>
+          {tab === "peternak"
+            ? <PeternakPage isAdmin={user.roles.includes("admin")} />
+            : <ObatPage isAdmin={user.roles.includes("admin")} />}
+        </>
       ) : (
         <div style={{ ...card, color: "#888" }}>Beranda peternak menyusul di slice berikutnya.</div>
       )}
