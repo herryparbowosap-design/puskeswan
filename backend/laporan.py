@@ -211,6 +211,27 @@ async def _hitung_rekap(db, tahun: int, bulan: int, kalurahan_id: Optional[str] 
         {"created_at": {"$gte": d_dari, "$lt": d_sampai}, "status": "dikonfirmasi"}
     )
 
+    # --- Kegiatan massal (terpisah dari pelayanan per-peternak) ---
+    kflt = {"tgl": {"$gte": s_dari, "$lte": s_sampai}}
+    if kalurahan_id:
+        kflt["kalurahan_id"] = kalurahan_id
+    kegs = await db.kegiatan.find(kflt, {"_id": 0}).to_list(5000)
+    keg_kategori, keg_modalitas = Counter(), Counter()
+    keg_wilayah = Counter()
+    total_sasaran = 0
+    for k in kegs:
+        keg_kategori[k.get("kategori") or "(lain)"] += 1
+        if k.get("modalitas"):
+            keg_modalitas[k["modalitas"]] += 1
+        if k.get("kalurahan_id"):
+            keg_wilayah[(k["kalurahan_id"], k.get("wilayah_nama"))] += 1
+        try:
+            total_sasaran += int(k.get("jumlah_sasaran") or 0)
+        except (TypeError, ValueError):
+            pass
+    keg_wilayah_list = [{"kalurahan_id": kid, "nama": nm or kid, "jumlah": n}
+                        for (kid, nm), n in sorted(keg_wilayah.items(), key=lambda kv: -kv[1])]
+
     return {
         "periode": {"tahun": tahun, "bulan": bulan, "dari": s_dari, "sampai": s_sampai},
         "filter_kalurahan_id": kalurahan_id,
@@ -224,6 +245,14 @@ async def _hitung_rekap(db, tahun: int, bulan: int, kalurahan_id: Optional[str] 
             "per_penyakit": penyakit_list,
             "per_wilayah": wilayah_list,
             "per_petugas": petugas_list,
+        },
+        "kegiatan_massal": {
+            "total": len(kegs),
+            "total_sasaran": total_sasaran,
+            "per_kategori": dict(keg_kategori),
+            "per_modalitas": dict(keg_modalitas),
+            "per_wilayah": keg_wilayah_list,
+            "rincian_kategori": _rincian_kategori(kegs),
         },
         "obat": obat_list,
         "ternak_mutasi": dict(mutasi),
@@ -346,6 +375,26 @@ def _build_xlsx(rekap: dict) -> bytes:
                     r += 1
                 r += 1
             r += 1
+        autowidth(s)
+
+    # --- Kegiatan massal ---
+    km = rekap.get("kegiatan_massal") or {}
+    if km.get("total"):
+        s = wb.create_sheet("Kegiatan Massal")
+        s["A1"] = "KEGIATAN MASSAL"
+        s["A1"].font = TITLE
+        r = 3
+        header_row(s, r, ["Ringkasan", "Nilai"]); r += 1
+        s.cell(row=r, column=1, value="Total kegiatan"); s.cell(row=r, column=2, value=km["total"]); r += 1
+        s.cell(row=r, column=1, value="Total sasaran"); s.cell(row=r, column=2, value=km.get("total_sasaran", 0)); r += 2
+        for judul, data in [("Per kategori", km.get("per_kategori", {})), ("Per modalitas", km.get("per_modalitas", {}))]:
+            header_row(s, r, [judul, "Jumlah"]); r += 1
+            for k, v in data.items():
+                s.cell(row=r, column=1, value=k); s.cell(row=r, column=2, value=v); r += 1
+            r += 1
+        header_row(s, r, ["Wilayah", "Jumlah"]); r += 1
+        for w in km.get("per_wilayah", []):
+            s.cell(row=r, column=1, value=w["nama"]); s.cell(row=r, column=2, value=w["jumlah"]); r += 1
         autowidth(s)
 
     buf = io.BytesIO()
