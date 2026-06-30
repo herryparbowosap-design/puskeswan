@@ -37,6 +37,115 @@ async def laporan_bulanan(
     return await _hitung_rekap(get_db(), tahun, bulan, kalurahan_id)
 
 
+def _num(x):
+    """Tampilkan bilangan bulat tanpa desimal, selain itu apa adanya."""
+    try:
+        f = float(x)
+        return int(f) if f == int(f) else f
+    except (TypeError, ValueError):
+        return x
+
+
+def _rincian_kategori(pels):
+    """Ringkasan turunan per kategori dari field detail tiap pelayanan."""
+    from collections import defaultdict
+
+    def det(p):
+        return p.get("detail") or {}
+
+    def tabel(judul, kolom, baris):
+        return {"judul": judul, "kolom": kolom, "baris": baris}
+
+    def grup(rows, field, kolom_label):
+        c = defaultdict(int)
+        for d in rows:
+            c[d.get(field) or "(tak diisi)"] += 1
+        baris = [[k, v] for k, v in sorted(c.items(), key=lambda kv: -kv[1])]
+        return tabel(f"Per {kolom_label}", [kolom_label.capitalize(), "Jumlah"], baris)
+
+    out = {}
+    by = defaultdict(list)
+    for p in pels:
+        by[det(p).get("kategori")].append(det(p))
+
+    # VAKSINASI: total dosis + per jenis vaksin (kegiatan & dosis)
+    if by.get("VAKSINASI"):
+        rows = by["VAKSINASI"]
+        per = defaultdict(lambda: {"kegiatan": 0, "dosis": 0.0})
+        total = 0.0
+        for d in rows:
+            j = d.get("jenis_vaksin") or "(tak diisi)"
+            try:
+                dz = float(d.get("jumlah_dosis") or 0)
+            except (TypeError, ValueError):
+                dz = 0.0
+            per[j]["kegiatan"] += 1
+            per[j]["dosis"] += dz
+            total += dz
+        baris = [[j, v["kegiatan"], _num(v["dosis"])] for j, v in sorted(per.items(), key=lambda kv: -kv[1]["kegiatan"])]
+        out["VAKSINASI"] = {
+            "ringkas": {"Total kegiatan": len(rows), "Total dosis": _num(total)},
+            "tabel": [tabel("Per jenis vaksin", ["Vaksin", "Kegiatan", "Dosis"], baris)],
+        }
+
+    # PKB: hasil bunting/tidak/meragukan
+    if by.get("PKB"):
+        rows = by["PKB"]
+        hasil = defaultdict(int)
+        for d in rows:
+            hasil[d.get("hasil") or "(tak diisi)"] += 1
+        out["PKB"] = {
+            "ringkas": {"Total kegiatan": len(rows), "Bunting": hasil.get("Bunting", 0)},
+            "tabel": [tabel("Per hasil", ["Hasil", "Jumlah"], [[k, v] for k, v in sorted(hasil.items(), key=lambda kv: -kv[1])])],
+        }
+
+    # IB: per pejantan/straw
+    if by.get("IB"):
+        rows = by["IB"]
+        out["IB"] = {"ringkas": {"Total kegiatan": len(rows)}, "tabel": [grup(rows, "kode_pejantan", "pejantan")]}
+
+    # GANGREP: per jenis gangguan
+    if by.get("GANGREP"):
+        rows = by["GANGREP"]
+        out["GANGREP"] = {"ringkas": {"Total kegiatan": len(rows)}, "tabel": [grup(rows, "jenis_gangguan", "jenis gangguan")]}
+
+    # LAB: per pemeriksaan
+    if by.get("LAB"):
+        rows = by["LAB"]
+        out["LAB"] = {"ringkas": {"Total kegiatan": len(rows)}, "tabel": [grup(rows, "pemeriksaan", "pemeriksaan")]}
+
+    # PEMBINAAN: total peserta
+    if by.get("PEMBINAAN"):
+        rows = by["PEMBINAAN"]
+        peserta = 0.0
+        for d in rows:
+            try:
+                peserta += float(d.get("jml_peserta") or 0)
+            except (TypeError, ValueError):
+                pass
+        out["PEMBINAAN"] = {
+            "ringkas": {"Total kegiatan": len(rows), "Total peserta": _num(peserta)},
+            "tabel": [grup(rows, "topik", "topik")],
+        }
+
+    # KONSULTASI: per topik
+    if by.get("KONSULTASI"):
+        rows = by["KONSULTASI"]
+        out["KONSULTASI"] = {"ringkas": {"Total kegiatan": len(rows)}, "tabel": [grup(rows, "topik", "topik")]}
+
+    # ADUAN: per jenis aduan
+    if by.get("ADUAN"):
+        rows = by["ADUAN"]
+        out["ADUAN"] = {"ringkas": {"Total kegiatan": len(rows)}, "tabel": [grup(rows, "jenis_aduan", "jenis aduan")]}
+
+    # DESINFEKSI: per lokasi
+    if by.get("DESINFEKSI"):
+        rows = by["DESINFEKSI"]
+        out["DESINFEKSI"] = {"ringkas": {"Total kegiatan": len(rows)}, "tabel": [grup(rows, "lokasi", "lokasi")]}
+
+    return out
+
+
 async def _hitung_rekap(db, tahun: int, bulan: int, kalurahan_id: Optional[str] = None):
     s_dari, s_sampai = _range_str(tahun, bulan)
     d_dari, d_sampai = _range_dt(tahun, bulan)
@@ -108,6 +217,7 @@ async def _hitung_rekap(db, tahun: int, bulan: int, kalurahan_id: Optional[str] 
         "pelayanan": {
             "total": len(pels),
             "per_kategori": dict(per_kategori),
+            "rincian_kategori": _rincian_kategori(pels),
             "per_metode": dict(per_metode),
             "per_modalitas": dict(per_modalitas),
             "per_prognosa": dict(per_prognosa),
@@ -205,6 +315,38 @@ def _build_xlsx(rekap: dict) -> bytes:
                 [[x["nama"], x["jumlah"]] for x in pel["per_petugas"]])
     sheet_tabel("Obat", ["Obat", "Jumlah", "Satuan"],
                 [[x["nama"], x["jumlah"], x["satuan"]] for x in rekap["obat"]])
+
+    # --- Rincian Kategori (turunan dari detail) ---
+    rinc = pel.get("rincian_kategori") or {}
+    if rinc:
+        s = wb.create_sheet("Rincian Kategori")
+        r = 1
+        bulan_label = {
+            "VAKSINASI": "Vaksinasi", "PKB": "PKB (kebuntingan)", "IB": "Inseminasi buatan",
+            "GANGREP": "Gangguan reproduksi", "LAB": "Laboratorium", "PEMBINAAN": "Pembinaan",
+            "KONSULTASI": "Konsultasi", "ADUAN": "Aduan", "DESINFEKSI": "Desinfeksi",
+        }
+        for kat, isi in rinc.items():
+            c = s.cell(row=r, column=1, value=bulan_label.get(kat, kat))
+            c.font = TITLE
+            r += 1
+            ringkas = isi.get("ringkas") or {}
+            if ringkas:
+                header_row(s, r, ["Ringkasan", "Nilai"]); r += 1
+                for k, v in ringkas.items():
+                    s.cell(row=r, column=1, value=k)
+                    s.cell(row=r, column=2, value=v)
+                    r += 1
+                r += 1
+            for tb in isi.get("tabel") or []:
+                header_row(s, r, tb["kolom"]); r += 1
+                for baris in tb["baris"]:
+                    for j, val in enumerate(baris, start=1):
+                        s.cell(row=r, column=j, value=val)
+                    r += 1
+                r += 1
+            r += 1
+        autowidth(s)
 
     buf = io.BytesIO()
     wb.save(buf)
