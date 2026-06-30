@@ -47,13 +47,15 @@ async def _hitung_rekap(db, tahun: int, bulan: int, kalurahan_id: Optional[str] 
         pflt["peternak.wilayah_id"] = kalurahan_id
     pels = await db.pelayanan.find(pflt, {"_id": 0}).to_list(5000)
 
-    per_kategori, per_metode, per_prognosa = Counter(), Counter(), Counter()
+    per_kategori, per_metode, per_prognosa, per_modalitas = Counter(), Counter(), Counter(), Counter()
     per_penyakit, per_wilayah, per_petugas = Counter(), Counter(), Counter()
     obat_agg = defaultdict(lambda: {"jumlah": 0.0, "satuan": ""})
     for p in pels:
         per_kategori[p.get("kategori") or "-"] += 1
         if p.get("metode_layanan"):
             per_metode[p["metode_layanan"]] += 1
+        if p.get("modalitas"):
+            per_modalitas[p["modalitas"]] += 1
         if p.get("prognosa"):
             per_prognosa[p["prognosa"]] += 1
         if p.get("penyakit_id"):
@@ -107,6 +109,7 @@ async def _hitung_rekap(db, tahun: int, bulan: int, kalurahan_id: Optional[str] 
             "total": len(pels),
             "per_kategori": dict(per_kategori),
             "per_metode": dict(per_metode),
+            "per_modalitas": dict(per_modalitas),
             "per_prognosa": dict(per_prognosa),
             "per_penyakit": penyakit_list,
             "per_wilayah": wilayah_list,
@@ -172,6 +175,7 @@ def _build_xlsx(rekap: dict) -> bytes:
     r += 1
     for judul, data in [
         ("Per kategori", pel["per_kategori"]),
+        ("Per modalitas", pel.get("per_modalitas", {})),
         ("Per metode", pel["per_metode"]),
         ("Per prognosa", pel["per_prognosa"]),
         ("Mutasi ternak", rekap["ternak_mutasi"]),
