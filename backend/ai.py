@@ -287,28 +287,26 @@ class SusunTernakIn(BaseModel):
     teks: str
 
 
-@router.post("/susun-ternak")
-async def susun_ternak(body: SusunTernakIn, _user=Depends(require_roles("petugas", "admin"))):
-    teks = (body.teks or "").strip()
-    if len(teks) < 3:
-        raise HTTPException(400, "deskripsi terlalu pendek")
-    if len(teks) > 1000:
-        teks = teks[:1000]
+async def _panggil_ai(system, teks, max_tokens=700):
+    """Panggilan AI teks→teks (mengembalikan string mentah). Melempar bila gagal."""
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
-        raise HTTPException(503, "AI belum dikonfigurasi (ANTHROPIC_API_KEY kosong)")
-    try:
-        from anthropic import AsyncAnthropic
-        client = AsyncAnthropic(api_key=api_key)
-        resp = await client.messages.create(
-            model=AI_MODEL,
-            max_tokens=700,
-            system=SYSTEM_TERNAK,
-            messages=[{"role": "user", "content": teks}],
-        )
-        raw = "".join(getattr(b, "text", "") for b in resp.content if getattr(b, "type", "") == "text").strip()
-    except Exception as e:
-        raise HTTPException(502, f"AI gagal: {e}")
+        raise RuntimeError("ANTHROPIC_API_KEY kosong")
+    from anthropic import AsyncAnthropic
+    client = AsyncAnthropic(api_key=api_key)
+    resp = await client.messages.create(
+        model=AI_MODEL, max_tokens=max_tokens, system=system,
+        messages=[{"role": "user", "content": teks[:1000]}],
+    )
+    return "".join(getattr(b, "text", "") for b in resp.content if getattr(b, "type", "") == "text").strip()
+
+
+async def susun_ternak_core(teks: str) -> list:
+    """Inti susun-ternak — dipakai endpoint & webhook petugas. Mengembalikan list draft."""
+    teks = (teks or "").strip()
+    if len(teks) < 3:
+        return []
+    raw = await _panggil_ai(SYSTEM_TERNAK, teks, max_tokens=700)
     data = _parse_json(raw)
     out = []
     for t in (data.get("ternak") or [])[:50]:
@@ -324,4 +322,63 @@ async def susun_ternak(body: SusunTernakIn, _user=Depends(require_roles("petugas
             "jenis_kelamin": t.get("jenis_kelamin") if t.get("jenis_kelamin") in ("Jantan", "Betina") else None,
             "catatan": (t.get("catatan") or None),
         })
+    return out
+
+
+@router.post("/susun-ternak")
+async def susun_ternak(body: SusunTernakIn, _user=Depends(require_roles("petugas", "admin"))):
+    teks = (body.teks or "").strip()
+    if len(teks) < 3:
+        raise HTTPException(400, "deskripsi terlalu pendek")
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        raise HTTPException(503, "AI belum dikonfigurasi (ANTHROPIC_API_KEY kosong)")
+    try:
+        out = await susun_ternak_core(teks)
+    except Exception as e:
+        raise HTTPException(502, f"AI gagal: {e}")
     return {"ternak": out, "model": AI_MODEL, "catatan": "Draft AI — periksa & edit sebelum simpan."}
+
+
+# ---------------------------------------------------------------------------
+# AI susun pelayanan (untuk jalur PETUGAS via WA) — ekstrak deskripsi bebas
+# menjadi draft pelayanan. Angka medis (obat) DIANCHOR ke formularium oleh
+# pemanggil, BUKAN dikarang AI. Hasil = DRAFT, difinalisasi petugas di app.
+# ---------------------------------------------------------------------------
+SYSTEM_PELAYANAN = (
+    "Anda asisten input rekam pelayanan kesehatan hewan untuk Puskeswan di Indonesia. "
+    "Dari deskripsi bebas PETUGAS, susun draft pelayanan. JANGAN mengarang; kosongkan (null) yang tak disebut. "
+    "JANGAN menentukan dosis/aturan pakai obat — cukup tulis NAMA obat & JUMLAH bila disebut.\n"
+    "kategori salah satu: KESWAN (pengobatan), VAKSINASI, PKB, GANGREP, IB, LAB, KONSULTASI, ADUAN. "
+    "Default KESWAN bila pengobatan/keluhan klinis.\n"
+    "Balas HANYA JSON valid tanpa markdown.\n"
+    'Format: {"kategori": str, "hewan_teks": str|null, "keluhan": str|null, "tindakan": str|null, '
+    '"obat": [{"nama": str, "jumlah": number|null, "satuan": str|null}], '
+    '"modalitas": "Pasif"|"Aktif"|"Semiaktif"|null}'
+)
+
+
+async def susun_pelayanan_core(teks: str) -> dict:
+    """Inti susun-pelayanan. Mengembalikan dict draft (obat belum dicocokkan formularium)."""
+    teks = (teks or "").strip()
+    if len(teks) < 3:
+        return {}
+    raw = await _panggil_ai(SYSTEM_PELAYANAN, teks, max_tokens=700)
+    data = _parse_json(raw)
+    kat = data.get("kategori")
+    if kat not in ("KESWAN", "VAKSINASI", "PKB", "GANGREP", "IB", "LAB", "KONSULTASI", "ADUAN"):
+        kat = "KESWAN"
+    obat = []
+    for o in (data.get("obat") or [])[:20]:
+        if isinstance(o, dict) and o.get("nama"):
+            obat.append({"nama": str(o["nama"]).strip()[:80],
+                         "jumlah": _num_or_null(o.get("jumlah")),
+                         "satuan": (o.get("satuan") or None)})
+    mod = data.get("modalitas")
+    return {
+        "kategori": kat,
+        "hewan_teks": (data.get("hewan_teks") or None),
+        "keluhan": (data.get("keluhan") or None),
+        "tindakan": (data.get("tindakan") or None),
+        "obat": obat,
+        "modalitas": mod if mod in ("Pasif", "Aktif", "Semiaktif") else None,
+    }
