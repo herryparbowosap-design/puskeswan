@@ -124,9 +124,15 @@ SYSTEM_OBAT = (
 )
 
 
-class BacaObatIn(BaseModel):
+class GambarIn(BaseModel):
     image_base64: str
     media_type: str = "image/jpeg"
+
+
+class BacaObatIn(BaseModel):
+    image_base64: Optional[str] = None        # kompat lama: 1 foto
+    media_type: str = "image/jpeg"
+    images: Optional[list[GambarIn]] = None    # baru: bisa beberapa foto (depan/belakang dll)
 
 
 def _num_or_null(v):
@@ -140,11 +146,27 @@ def _num_or_null(v):
 
 @router.post("/baca-obat")
 async def baca_obat(body: BacaObatIn, _user=Depends(require_roles("petugas", "admin"))):
-    if not body.image_base64:
+    # Kumpulkan daftar gambar (dukung 1 foto lama atau banyak foto baru)
+    gambar = list(body.images or [])
+    if not gambar and body.image_base64:
+        gambar = [GambarIn(image_base64=body.image_base64, media_type=body.media_type)]
+    gambar = [g for g in gambar if g.image_base64][:5]
+    if not gambar:
         raise HTTPException(400, "gambar kosong")
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
         raise HTTPException(503, "AI belum dikonfigurasi (ANTHROPIC_API_KEY kosong)")
+    instruksi = (
+        "Baca label obat dari SEMUA foto berikut (bisa beberapa sisi kemasan: depan, belakang, dus). "
+        "Gabungkan informasinya menjadi satu, kembalikan JSON sesuai format."
+        if len(gambar) > 1 else
+        "Baca label obat pada foto ini dan kembalikan JSON sesuai format."
+    )
+    content = [
+        {"type": "image", "source": {"type": "base64", "media_type": g.media_type, "data": g.image_base64}}
+        for g in gambar
+    ]
+    content.append({"type": "text", "text": instruksi})
     try:
         from anthropic import AsyncAnthropic
         client = AsyncAnthropic(api_key=api_key)
@@ -152,10 +174,7 @@ async def baca_obat(body: BacaObatIn, _user=Depends(require_roles("petugas", "ad
             model=AI_MODEL,
             max_tokens=512,
             system=SYSTEM_OBAT,
-            messages=[{"role": "user", "content": [
-                {"type": "image", "source": {"type": "base64", "media_type": body.media_type, "data": body.image_base64}},
-                {"type": "text", "text": "Baca label obat pada foto ini dan kembalikan JSON sesuai format."},
-            ]}],
+            messages=[{"role": "user", "content": content}],
         )
         raw = "".join(getattr(b, "text", "") for b in resp.content if getattr(b, "type", "") == "text").strip()
     except Exception as e:
@@ -172,6 +191,7 @@ async def baca_obat(body: BacaObatIn, _user=Depends(require_roles("petugas", "ad
         "waktu_henti_daging_hari": _num_or_null(data.get("waktu_henti_daging_hari")),
         "waktu_henti_susu_jam": _num_or_null(data.get("waktu_henti_susu_jam")),
         "model": AI_MODEL,
+        "jumlah_foto": len(gambar),
         "catatan": "Hasil baca AI dari label — periksa & koreksi angka sebelum simpan.",
     }
 
@@ -191,3 +211,117 @@ def _parse_json(raw: str) -> dict:
             except Exception:
                 pass
     return {"diagnosa_teks": "", "usulan_kode": []}
+
+
+# ---------------------------------------------------------------------------
+# AI baca KTP — ekstrak nama/NIK/alamat untuk MEMPERCEPAT input pendaftaran.
+# PDP: foto KTP TIDAK disimpan. Hanya field hasil yang dikembalikan; petugas
+# wajib memeriksa & mengoreksi. Endpoint butuh login (petugas/admin).
+# ---------------------------------------------------------------------------
+SYSTEM_KTP = (
+    "Anda asisten input data untuk Puskeswan di Indonesia. Dari foto KTP, baca teks yang TERCETAK "
+    "dan kembalikan datanya untuk mempercepat pendaftaran. JANGAN mengarang; jika tidak terbaca, beri null.\n"
+    "Balas HANYA JSON valid tanpa markdown.\n"
+    'Format: {"nama": str|null, "nik": str|null, "alamat": str|null}'
+)
+
+
+class BacaKtpIn(BaseModel):
+    image_base64: str
+    media_type: str = "image/jpeg"
+
+
+@router.post("/baca-ktp")
+async def baca_ktp(body: BacaKtpIn, _user=Depends(require_roles("petugas", "admin"))):
+    if not body.image_base64:
+        raise HTTPException(400, "gambar kosong")
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise HTTPException(503, "AI belum dikonfigurasi (ANTHROPIC_API_KEY kosong)")
+    try:
+        from anthropic import AsyncAnthropic
+        client = AsyncAnthropic(api_key=api_key)
+        resp = await client.messages.create(
+            model=AI_MODEL,
+            max_tokens=400,
+            system=SYSTEM_KTP,
+            messages=[{"role": "user", "content": [
+                {"type": "image", "source": {"type": "base64", "media_type": body.media_type, "data": body.image_base64}},
+                {"type": "text", "text": "Baca KTP ini, kembalikan JSON nama/nik/alamat sesuai format."},
+            ]}],
+        )
+        raw = "".join(getattr(b, "text", "") for b in resp.content if getattr(b, "type", "") == "text").strip()
+    except Exception as e:
+        raise HTTPException(502, f"AI gagal: {e}")
+    data = _parse_json(raw)
+    nik = (data.get("nik") or "")
+    nik = "".join(ch for ch in str(nik) if ch.isdigit()) or None
+    return {
+        "nama": data.get("nama") or None,
+        "nik": nik,
+        "alamat": data.get("alamat") or None,
+        "model": AI_MODEL,
+        "catatan": "Hasil baca AI dari KTP — foto tidak disimpan. Periksa & koreksi sebelum simpan.",
+    }
+
+
+# ---------------------------------------------------------------------------
+# AI susun ternak — dari deskripsi bebas ke daftar ternak terstruktur.
+# Tidak menyimpan; mengembalikan draft untuk diperiksa/diedit petugas.
+# ---------------------------------------------------------------------------
+SYSTEM_TERNAK = (
+    "Anda asisten input data ternak untuk Puskeswan di Indonesia. Dari kalimat bebas peternak, "
+    "susun daftar ternak terstruktur. JANGAN mengarang detail yang tak disebut.\n"
+    "Aturan:\n"
+    "- spesies: gunakan istilah umum Indonesia (Sapi, Kambing, Domba, Kerbau, Kuda, Babi, Ayam, Itik, "
+    "Kelinci, Anjing, Kucing, Puyuh, Mentok, Angsa). Jika lain, tulis apa adanya.\n"
+    "- Jika jumlah > 1 → mode 'populasi' dan isi jml_deklarasi. Jika 1 ekor → mode 'individu'.\n"
+    "- jenis_kelamin hanya 'Jantan'/'Betina'/null. ras null jika tak disebut.\n"
+    "- Balas HANYA JSON valid tanpa markdown.\n"
+    'Format: {"ternak": [{"spesies": str, "ras": str|null, "mode": "individu"|"populasi", '
+    '"jml_deklarasi": int|null, "jenis_kelamin": "Jantan"|"Betina"|null, "catatan": str|null}]}'
+)
+
+
+class SusunTernakIn(BaseModel):
+    teks: str
+
+
+@router.post("/susun-ternak")
+async def susun_ternak(body: SusunTernakIn, _user=Depends(require_roles("petugas", "admin"))):
+    teks = (body.teks or "").strip()
+    if len(teks) < 3:
+        raise HTTPException(400, "deskripsi terlalu pendek")
+    if len(teks) > 1000:
+        teks = teks[:1000]
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        raise HTTPException(503, "AI belum dikonfigurasi (ANTHROPIC_API_KEY kosong)")
+    try:
+        from anthropic import AsyncAnthropic
+        client = AsyncAnthropic(api_key=api_key)
+        resp = await client.messages.create(
+            model=AI_MODEL,
+            max_tokens=700,
+            system=SYSTEM_TERNAK,
+            messages=[{"role": "user", "content": teks}],
+        )
+        raw = "".join(getattr(b, "text", "") for b in resp.content if getattr(b, "type", "") == "text").strip()
+    except Exception as e:
+        raise HTTPException(502, f"AI gagal: {e}")
+    data = _parse_json(raw)
+    out = []
+    for t in (data.get("ternak") or [])[:50]:
+        if not isinstance(t, dict) or not t.get("spesies"):
+            continue
+        mode = "populasi" if t.get("mode") == "populasi" else "individu"
+        jml = _num_or_null(t.get("jml_deklarasi"))
+        out.append({
+            "spesies": str(t.get("spesies")).strip()[:40],
+            "ras": (t.get("ras") or None),
+            "mode": mode,
+            "jml_deklarasi": int(jml) if (mode == "populasi" and jml) else None,
+            "jenis_kelamin": t.get("jenis_kelamin") if t.get("jenis_kelamin") in ("Jantan", "Betina") else None,
+            "catatan": (t.get("catatan") or None),
+        })
+    return {"ternak": out, "model": AI_MODEL, "catatan": "Draft AI — periksa & edit sebelum simpan."}
