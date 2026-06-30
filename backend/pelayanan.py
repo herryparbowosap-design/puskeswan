@@ -48,6 +48,7 @@ class PelayananIn(BaseModel):
     isikhnas_id: Optional[str] = None
     tindakan: Optional[str] = None
     prognosa: Optional[str] = None            # Fausta | Dubius | Infausta
+    modalitas: Optional[str] = None           # Pasif | Aktif | Semiaktif | Yanduwan/Vaksinasi
     metode_layanan: Optional[str] = None
     keterangan: Optional[str] = None
     foto: Optional[list[FotoIn]] = None
@@ -81,6 +82,7 @@ async def create_pelayanan(body: PelayananIn, user=Depends(require_roles("petuga
         "isikhnas_id": body.isikhnas_id,
         "tindakan": body.tindakan,
         "prognosa": body.prognosa,
+        "modalitas": body.modalitas,
         "metode_layanan": body.metode_layanan,
         "keterangan": body.keterangan,
         "foto": [
