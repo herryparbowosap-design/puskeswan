@@ -53,6 +53,8 @@ class PelayananIn(BaseModel):
     metode_layanan: Optional[str] = None
     keterangan: Optional[str] = None
     foto: Optional[list[FotoIn]] = None
+    sumber: Optional[str] = None               # kanal input: manual | wa-petugas
+    draft: Optional[bool] = None               # True = perlu dilengkapi (mis. dari WA)
 
 
 @router.post("")
@@ -91,7 +93,9 @@ async def create_pelayanan(body: PelayananIn, user=Depends(require_roles("petuga
             for f in (body.foto or [])
         ],
         "detail": {**(body.detail or {}), "kategori": body.kategori},
-        "sumber_input": "manual",
+        "sumber_input": body.sumber or "manual",
+        "draft": bool(body.draft),
+        "perlu_dilengkapi": bool(body.draft),
         "dikonfirmasi_oleh": None,
         "created_by": user["id"],
         "created_at": now,
