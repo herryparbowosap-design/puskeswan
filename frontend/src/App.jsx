@@ -281,9 +281,147 @@ function TernakList({ peternakId, refreshKey }) {
   );
 }
 
+function PenyakitPicker({ value, onChange }) {
+  const [q, setQ] = useState("");
+  const [results, setResults] = useState([]);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!q || q.length < 2) { setResults([]); return; }
+    const id = setTimeout(() => {
+      jget(`/penyakit?q=${encodeURIComponent(q)}`).then(setResults).catch(() => setResults([]));
+    }, 250);
+    return () => clearTimeout(id);
+  }, [q]);
+
+  if (value) {
+    return (
+      <div style={{ ...card, padding: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <span style={{ fontSize: 14 }}><strong>{value.kode}</strong> — {value.nama}</span>
+        <button style={btnGhost} onClick={() => onChange(null)}>ganti</button>
+      </div>
+    );
+  }
+  return (
+    <div style={{ position: "relative" }}>
+      <input style={inp} placeholder="Cari kode iSIKHNAS (mis. ovari, ND)…" value={q}
+        onChange={(e) => { setQ(e.target.value); setOpen(true); }} onFocus={() => setOpen(true)} />
+      {open && results.length > 0 && (
+        <div style={{ position: "absolute", zIndex: 10, background: "#fff", border: "1px solid #ccc", borderRadius: 8, width: "100%", maxHeight: 220, overflowY: "auto", marginTop: 4, boxSizing: "border-box" }}>
+          {results.map((r) => (
+            <div key={r.kode} style={{ padding: 8, cursor: "pointer", borderBottom: "1px solid #f0f0f0", fontSize: 14 }}
+              onClick={() => { onChange({ penyakit_id: r.kode, kode: r.kode, nama: r.nama }); setQ(""); setOpen(false); }}>
+              <strong>{r.kode}</strong> — {r.nama} <span style={{ color: "#999", fontSize: 12 }}>({r.kategori})</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PelayananForm({ peternak, onCreated, onCancel }) {
+  const [f, setF] = useState({
+    tgl: new Date().toISOString().slice(0, 10), jenis_hewan: "", jumlah: 1,
+    diagnosa_teks: "", tindakan: "", prognosa: "", metode_layanan: "Kunjungan Lapangan", keterangan: "",
+  });
+  const [penyakit, setPenyakit] = useState(null);
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit() {
+    setErr(null);
+    setBusy(true);
+    try {
+      const body = { kategori: "KESWAN", peternak_id: peternak.id };
+      if (f.tgl) body.tgl = f.tgl;
+      if (f.diagnosa_teks) body.diagnosa_teks = f.diagnosa_teks;
+      if (penyakit) body.penyakit_id = penyakit.penyakit_id;
+      if (f.tindakan) body.tindakan = f.tindakan;
+      if (f.prognosa) body.prognosa = f.prognosa;
+      if (f.metode_layanan) body.metode_layanan = f.metode_layanan;
+      if (f.keterangan) body.keterangan = f.keterangan;
+      if (f.jenis_hewan) body.hewan = { jenis_hewan: f.jenis_hewan, jumlah: parseInt(f.jumlah, 10) || 1 };
+      const rec = await jpost("/pelayanan", body);
+      onCreated(rec);
+    } catch (e) {
+      setErr(String(e.message || e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div style={{ ...card, display: "grid", gap: 10, background: "#fafafa" }}>
+      <strong>Catat Pelayanan (KESWAN)</strong>
+      <input style={inp} type="date" value={f.tgl} onChange={(e) => setF({ ...f, tgl: e.target.value })} />
+      <div style={{ display: "flex", gap: 8 }}>
+        <input style={inp} placeholder="Jenis hewan (mis. Sapi PFH)" value={f.jenis_hewan} onChange={(e) => setF({ ...f, jenis_hewan: e.target.value })} />
+        <input style={{ ...inp, width: 90 }} type="number" min="1" placeholder="Jml" value={f.jumlah} onChange={(e) => setF({ ...f, jumlah: e.target.value })} />
+      </div>
+      <textarea style={{ ...inp, minHeight: 60, fontFamily: "inherit" }} placeholder="Keluhan / diagnosa (teks)" value={f.diagnosa_teks} onChange={(e) => setF({ ...f, diagnosa_teks: e.target.value })} />
+      <div>
+        <div style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>Kode iSIKHNAS (opsional)</div>
+        <PenyakitPicker value={penyakit} onChange={setPenyakit} />
+      </div>
+      <textarea style={{ ...inp, minHeight: 50, fontFamily: "inherit" }} placeholder="Tindakan / pengobatan" value={f.tindakan} onChange={(e) => setF({ ...f, tindakan: e.target.value })} />
+      <div style={{ display: "flex", gap: 8 }}>
+        <select style={inp} value={f.prognosa} onChange={(e) => setF({ ...f, prognosa: e.target.value })}>
+          <option value="">— Prognosa —</option>
+          <option>Fausta</option><option>Dubius</option><option>Infausta</option>
+        </select>
+        <select style={inp} value={f.metode_layanan} onChange={(e) => setF({ ...f, metode_layanan: e.target.value })}>
+          <option value="">— Metode —</option>
+          <option>Langsung</option><option>Tidak Langsung</option><option>Telepon/WA</option><option>Kunjungan Lapangan</option>
+        </select>
+      </div>
+      <input style={inp} placeholder="Keterangan (opsional)" value={f.keterangan} onChange={(e) => setF({ ...f, keterangan: e.target.value })} />
+      {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button style={btn} disabled={busy} onClick={submit}>{busy ? "Menyimpan…" : "Simpan pelayanan"}</button>
+        <button style={btnGhost} onClick={onCancel}>Batal</button>
+      </div>
+    </div>
+  );
+}
+
+function PelayananList({ peternakId, refreshKey }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    jget(`/pelayanan?peternak_id=${peternakId}`).then(setItems).catch(() => setItems([])).finally(() => setLoading(false));
+  }, [peternakId, refreshKey]);
+
+  if (loading) return <div style={{ color: "#888" }}>memuat riwayat…</div>;
+  if (!items.length) return <div style={{ color: "#888" }}>Belum ada pelayanan tercatat.</div>;
+
+  return (
+    <div style={{ display: "grid", gap: 8 }}>
+      {items.map((p) => (
+        <div key={p.id} style={card}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <strong style={{ fontSize: 14 }}>{p.tgl} · {p.kategori}</strong>
+            {p.penyakit_id && <span style={{ fontSize: 13, color: "#0f6e56" }}>iSIKHNAS: {p.penyakit_id}</span>}
+          </div>
+          {p.hewan && <div style={{ fontSize: 13, color: "#666" }}>{p.hewan.jenis_hewan} · {p.hewan.jumlah} ekor</div>}
+          {p.diagnosa_teks && <div style={{ fontSize: 14, marginTop: 4 }}>Dx: {p.diagnosa_teks}</div>}
+          {p.tindakan && <div style={{ fontSize: 14 }}>Tx: {p.tindakan}</div>}
+          {(p.prognosa || p.metode_layanan) && (
+            <div style={{ fontSize: 12, color: "#999", marginTop: 4 }}>{[p.prognosa, p.metode_layanan].filter(Boolean).join(" · ")}</div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function PeternakDetail({ peternak, onBack }) {
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showPel, setShowPel] = useState(false);
+  const [pelKey, setPelKey] = useState(0);
 
   return (
     <div style={{ display: "grid", gap: 14 }}>
@@ -298,6 +436,7 @@ function PeternakDetail({ peternak, onBack }) {
           </a>
         )}
       </div>
+
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <strong>Ternak</strong>
         <button style={btn} onClick={() => setShowForm((s) => !s)}>{showForm ? "Tutup" : "+ Tambah ternak"}</button>
@@ -305,6 +444,14 @@ function PeternakDetail({ peternak, onBack }) {
       {showForm && <TernakForm peternakId={peternak.id} onCancel={() => setShowForm(false)}
         onCreated={() => { setShowForm(false); setRefreshKey((k) => k + 1); }} />}
       <TernakList peternakId={peternak.id} refreshKey={refreshKey} />
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
+        <strong>Riwayat Pelayanan</strong>
+        <button style={btn} onClick={() => setShowPel((s) => !s)}>{showPel ? "Tutup" : "+ Catat pelayanan"}</button>
+      </div>
+      {showPel && <PelayananForm peternak={peternak} onCancel={() => setShowPel(false)}
+        onCreated={() => { setShowPel(false); setPelKey((k) => k + 1); }} />}
+      <PelayananList peternakId={peternak.id} refreshKey={pelKey} />
     </div>
   );
 }
