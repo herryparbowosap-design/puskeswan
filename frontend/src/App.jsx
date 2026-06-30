@@ -1621,7 +1621,11 @@ function PendaftaranPage({ onConfirmed }) {
             <div key={d.id} style={{ ...card, cursor: "pointer" }} onClick={() => setSel(d)}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <strong>{d.nama}</strong>
-                <span style={{ fontSize: 12, color: "#9a7b00" }}>{d.sumber || "—"}</span>
+                {(() => {
+                  const map = { wa: { t: "WhatsApp", c: "#0f6e56", b: "#e6f3ef" }, qr: { t: "QR", c: "#6b4fbb", b: "#efe9fb" }, web: { t: "Web", c: "#555", b: "#eee" }, kios: { t: "Kios", c: "#555", b: "#eee" } };
+                  const s = map[d.sumber] || { t: d.sumber || "—", c: "#888", b: "#f0f0f0" };
+                  return <span style={{ fontSize: 11, color: s.c, background: s.b, borderRadius: 999, padding: "2px 9px" }}>{s.t}</span>;
+                })()}
               </div>
               <div style={{ fontSize: 13, color: "#666" }}>{d.kontak}{d.ternak && d.ternak.length ? ` · ${d.ternak.length} ternak` : " · belum ada ternak"}{d.jenis_layanan ? ` · ${d.jenis_layanan}` : ""}</div>
             </div>
