@@ -127,7 +127,49 @@ async def _kirim_fonnte(no, nama, jenis):
         return {"status": "gagal", "error": str(e)[:200]}
 
 
-async def kirim_notif_pendaftaran(kontak, nama, jenis):
+async def kirim_teks_wa(no, teks):
+    """Kirim teks BEBAS via Cloud API (hanya valid dalam jendela 24 jam — untuk
+    balasan alur inbound, di mana pengguna sudah chat duluan, jadi GRATIS).
+    Mengembalikan dict status, tak melempar."""
+    provider = (os.getenv("WA_PROVIDER") or "none").lower()
+    if provider == "none":
+        return {"status": "off"}
+    no = normalisasi_no(no)
+    if not no:
+        return {"status": "skip", "alasan": "no HP tidak valid"}
+    if provider == "fonnte":
+        token = os.getenv("WA_FONNTE_TOKEN")
+        if not token:
+            return {"status": "skip", "alasan": "token fonnte kosong"}
+        try:
+            status, body = await asyncio.to_thread(
+                _post_form, "https://api.fonnte.com/send",
+                {"Authorization": token, "Content-Type": "application/x-www-form-urlencoded"},
+                {"target": no, "message": teks})
+            return {"status": "terkirim" if 200 <= status < 300 else "gagal", "http": status}
+        except Exception as e:
+            return {"status": "gagal", "error": str(e)[:200]}
+    # cloud
+    token = os.getenv("WA_CLOUD_TOKEN")
+    phone_id = os.getenv("WA_CLOUD_PHONE_ID")
+    if not token or not phone_id:
+        return {"status": "skip", "alasan": "kredensial cloud kosong"}
+    ver = os.getenv("WA_API_VERSION", "v21.0")
+    url = f"https://graph.facebook.com/{ver}/{phone_id}/messages"
+    payload = {"messaging_product": "whatsapp", "to": no, "type": "text", "text": {"body": teks[:4000]}}
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    try:
+        status, body = await asyncio.to_thread(_post_json, url, headers, payload)
+        return {"status": "terkirim" if 200 <= status < 300 else "gagal", "http": status, "resp": body[:300]}
+    except urllib.error.HTTPError as e:
+        try:
+            detail = e.read().decode("utf-8", "replace")[:300]
+        except Exception:
+            detail = str(e)
+        return {"status": "gagal", "http": getattr(e, "code", None), "resp": detail}
+    except Exception as e:
+        return {"status": "gagal", "error": str(e)[:200]}
+
     """jenis: 'konfirmasi' | 'tolak'. Selalu mengembalikan dict status, tak melempar."""
     provider = (os.getenv("WA_PROVIDER") or "none").lower()
     if provider == "none":
