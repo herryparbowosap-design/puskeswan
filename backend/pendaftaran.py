@@ -48,6 +48,7 @@ class PendaftaranIn(BaseModel):
     alamat_detail: Optional[str] = None
     koordinat: Optional[KoordinatIn] = None
     catatan: Optional[str] = None
+    jenis_layanan: Optional[str] = None  # pasif | aktif | semiaktif
     ternak: list[TernakDraft] = []
     sumber: str = "web"                 # penanda kanal: web | qr | wa | kios
 
@@ -86,6 +87,7 @@ async def buat_pendaftaran(body: PendaftaranIn):
         "alamat_detail": body.alamat_detail,
         "koordinat": {"type": "Point", "coordinates": [body.koordinat.lng, body.koordinat.lat]} if body.koordinat else None,
         "catatan": body.catatan,
+        "jenis_layanan": body.jenis_layanan,
         "ternak": [t.model_dump() for t in body.ternak],
         "peternak_id": None,
         "created_at": now,
