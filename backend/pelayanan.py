@@ -12,7 +12,7 @@ from auth import current_user, require_roles
 
 router = APIRouter(prefix="/pelayanan", tags=["pelayanan"])
 
-KATEGORI_DIDUKUNG = {"KESWAN"}
+KATEGORI_DIDUKUNG = {"KESWAN", "VAKSINASI", "PKB", "GANGREP", "IB", "LAB", "DESINFEKSI", "PEMBINAAN", "KONSULTASI", "ADUAN"}
 
 
 class FotoIn(BaseModel):
@@ -43,6 +43,7 @@ class PelayananIn(BaseModel):
     hewan: Optional[HewanIn] = None
     berat_kg: Optional[float] = None
     obat: Optional[list[ObatPakaiIn]] = None
+    detail: Optional[dict] = None             # field spesifik per kategori (vaksin, PKB, dll)
     penyakit_id: Optional[str] = None         # = kode iSIKHNAS (mis. "ND")
     diagnosa_teks: Optional[str] = None
     isikhnas_id: Optional[str] = None
@@ -89,7 +90,7 @@ async def create_pelayanan(body: PelayananIn, user=Depends(require_roles("petuga
             {"key": f.key, "content_type": f.content_type, "diunggah_oleh": user["id"], "diunggah_pada": now}
             for f in (body.foto or [])
         ],
-        "detail": {"kategori": body.kategori},
+        "detail": {**(body.detail or {}), "kategori": body.kategori},
         "sumber_input": "manual",
         "dikonfirmasi_oleh": None,
         "created_by": user["id"],
