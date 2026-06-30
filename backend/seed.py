@@ -525,3 +525,37 @@ async def seed_ras_upsert():
     if ditambah:
         print(f"[seed] ras_ternak: +{ditambah} ras baru")
     return ditambah
+
+
+# ── Obat contoh (idempoten; SILAKAN SUNTING sesuai sediaan/label di lapangan) ──
+OBAT_SEED = [
+    {"nama_dagang": "Oksitetrasiklin LA (mis. Vet-Oxy LA)", "zat_aktif": "Oksitetrasiklin",
+     "konsentrasi": 200, "satuan": "ml", "dosis_per_kg": 20, "rute": "IM",
+     "waktu_henti_daging_hari": 28, "waktu_henti_susu_jam": 168, "aktif": True},
+    {"nama_dagang": "Penstrep", "zat_aktif": "Penisilin + Streptomisin",
+     "konsentrasi": None, "satuan": "ml", "dosis_per_kg": None, "rute": "IM",
+     "waktu_henti_daging_hari": 23, "waktu_henti_susu_jam": 72, "aktif": True},
+    {"nama_dagang": "Vetadryl", "zat_aktif": "Difenhidramin HCl",
+     "konsentrasi": 10, "satuan": "ml", "dosis_per_kg": 1, "rute": "IM/IV",
+     "waktu_henti_daging_hari": None, "waktu_henti_susu_jam": None, "aktif": True},
+    {"nama_dagang": "Biosan TP", "zat_aktif": "Multivitamin / roboransia",
+     "konsentrasi": None, "satuan": "ml", "dosis_per_kg": None, "rute": "IM",
+     "waktu_henti_daging_hari": None, "waktu_henti_susu_jam": None, "aktif": True},
+    {"nama_dagang": "Sulfidol / Sulfa", "zat_aktif": "Sulfadimidin",
+     "konsentrasi": 200, "satuan": "ml", "dosis_per_kg": None, "rute": "IM/IV",
+     "waktu_henti_daging_hari": 10, "waktu_henti_susu_jam": 72, "aktif": True},
+]
+
+
+async def seed_obat_if_empty():
+    """Isi obat contoh hanya bila koleksi kosong. Idempoten."""
+    db = get_db()
+    if await db.obat.count_documents({}) > 0:
+        return 0
+    import uuid as _uuid
+    from datetime import datetime as _dt, timezone as _tz
+    now = _dt.now(_tz.utc)
+    docs = [{"id": _uuid.uuid4().hex, **o, "created_by": "seed", "created_at": now} for o in OBAT_SEED]
+    await db.obat.insert_many(docs)
+    print(f"[seed] obat: +{len(docs)} obat contoh")
+    return len(docs)
