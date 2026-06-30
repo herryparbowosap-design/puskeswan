@@ -88,3 +88,13 @@ async def catat_mutasi(tid: str, body: MutasiIn, user=Depends(require_roles("pet
             {"$set": {"status": new_status, "tgl_status": now, "updated_at": now}},
         )
     return {"ok": True, "status_baru": new_status or t.get("status")}
+
+
+@router.delete("/{tid}")
+async def delete_ternak(tid: str, _user=Depends(require_roles("admin"))):
+    db = get_db()
+    r = await db.ternak.delete_one({"id": tid})
+    if r.deleted_count == 0:
+        raise HTTPException(404, "ternak tidak ditemukan")
+    await db.mutasi_ternak.delete_many({"ternak_id": tid})
+    return {"ok": True}
