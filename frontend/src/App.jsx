@@ -339,6 +339,29 @@ function PelayananForm({ peternak, onCreated, onCancel }) {
   const [uploading, setUploading] = useState(false);
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [aiTeks, setAiTeks] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
+  const [usulan, setUsulan] = useState([]);
+
+  async function runAI() {
+    if (aiTeks.trim().length < 5) { setErr("Tulis catatan lapangan dulu untuk dianalisa AI."); return; }
+    setErr(null);
+    setAiBusy(true);
+    try {
+      const r = await jpost("/ai/saran", { teks: aiTeks, jenis_hewan: f.jenis_hewan || undefined });
+      setF((prev) => ({
+        ...prev,
+        diagnosa_teks: r.diagnosa_teks || prev.diagnosa_teks,
+        tindakan: r.tindakan || prev.tindakan,
+        prognosa: r.prognosa || prev.prognosa,
+      }));
+      setUsulan(r.usulan_kode || []);
+    } catch (e) {
+      setErr(String(e.message || e));
+    } finally {
+      setAiBusy(false);
+    }
+  }
 
   async function onPickFoto(e) {
     const files = Array.from(e.target.files || []);
@@ -389,6 +412,30 @@ function PelayananForm({ peternak, onCreated, onCancel }) {
         <input style={inp} placeholder="Jenis hewan (mis. Sapi PFH)" value={f.jenis_hewan} onChange={(e) => setF({ ...f, jenis_hewan: e.target.value })} />
         <input style={{ ...inp, width: 90 }} type="number" min="1" placeholder="Jml" value={f.jumlah} onChange={(e) => setF({ ...f, jumlah: e.target.value })} />
       </div>
+
+      <div style={{ border: "1px dashed #d6a700", borderRadius: 10, padding: 12, background: "#fffdf5", display: "grid", gap: 8 }}>
+        <div style={{ fontSize: 13, color: "#9a7b00", fontWeight: 500 }}>✨ Bantuan AI (opsional)</div>
+        <textarea style={{ ...inp, minHeight: 60, fontFamily: "inherit" }} value={aiTeks} onChange={(e) => setAiTeks(e.target.value)}
+          placeholder="Tulis catatan lapangan bebas… (mis. 'sapi perah ambing bengkak merah, susu menggumpal, nafsu makan turun')" />
+        <button type="button" style={{ ...btnGhost, borderColor: "#d6a700", color: "#9a7b00" }} disabled={aiBusy} onClick={runAI}>
+          {aiBusy ? "Menganalisa…" : "Analisa dengan AI"}
+        </button>
+        {usulan.length > 0 && (
+          <div style={{ display: "grid", gap: 6 }}>
+            <div style={{ fontSize: 12, color: "#666" }}>Usulan kode iSIKHNAS (klik untuk pakai) — periksa dulu:</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              {usulan.map((u) => (
+                <button key={u.kode} type="button" title={u.alasan} onClick={() => setPenyakit({ penyakit_id: u.kode, kode: u.kode, nama: u.nama })}
+                  style={{ ...btnGhost, fontSize: 13, borderColor: "#0f6e56", color: "#0f6e56" }}>
+                  {u.kode} — {u.nama}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        <div style={{ fontSize: 11, color: "#999" }}>AI hanya membantu menyusun; Anda tetap memeriksa &amp; mengonfirmasi sebelum simpan.</div>
+      </div>
+
       <textarea style={{ ...inp, minHeight: 60, fontFamily: "inherit" }} placeholder="Keluhan / diagnosa (teks)" value={f.diagnosa_teks} onChange={(e) => setF({ ...f, diagnosa_teks: e.target.value })} />
       <div>
         <div style={{ fontSize: 13, color: "#666", marginBottom: 4 }}>Kode iSIKHNAS (opsional)</div>
