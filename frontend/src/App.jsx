@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 
 const API = import.meta.env.VITE_API_URL || "";
 
@@ -14,6 +14,23 @@ function api(path, opts = {}) {
   });
 }
 
+async function jget(path) {
+  const r = await api(path);
+  if (!r.ok) throw new Error(((await r.json().catch(() => ({}))).detail) || `gagal (${r.status})`);
+  return r.json();
+}
+async function jpost(path, body) {
+  const r = await api(path, { method: "POST", body: JSON.stringify(body) });
+  if (!r.ok) throw new Error(((await r.json().catch(() => ({}))).detail) || `gagal (${r.status})`);
+  return r.json();
+}
+
+const inp = { padding: 10, borderRadius: 8, border: "1px solid #ccc", fontSize: 15, width: "100%", boxSizing: "border-box" };
+const btn = { padding: "10px 14px", borderRadius: 8, border: "none", background: "#0f6e56", color: "#fff", fontSize: 15, cursor: "pointer" };
+const btnGhost = { padding: "8px 12px", borderRadius: 8, border: "1px solid #ccc", background: "#fff", fontSize: 14, cursor: "pointer" };
+const card = { border: "1px solid #e3e3e0", borderRadius: 12, padding: 16, background: "#fff" };
+const STATUS_COLOR = { aktif: "#0f6e56", mati: "#888", dijual: "#b58100", dipotong: "#a33" };
+
 function Login({ onLogin }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -24,15 +41,7 @@ function Login({ onLogin }) {
     setErr(null);
     setBusy(true);
     try {
-      const r = await api("/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ username, password }),
-      });
-      if (!r.ok) {
-        const d = await r.json().catch(() => ({}));
-        throw new Error(d.detail || "login gagal");
-      }
-      const data = await r.json();
+      const data = await jpost("/auth/login", { username, password });
       localStorage.setItem("token", data.access_token);
       onLogin(data.user);
     } catch (e) {
@@ -47,41 +56,306 @@ function Login({ onLogin }) {
       <h1 style={{ fontWeight: 500, marginBottom: 4 }}>SIM Puskeswan</h1>
       <p style={{ color: "#666", marginTop: 0 }}>Masuk untuk melanjutkan</p>
       <div style={{ display: "grid", gap: 12, marginTop: 20 }}>
-        <input
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          style={{ padding: 12, borderRadius: 10, border: "1px solid #ccc", fontSize: 16 }}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && submit()}
-          style={{ padding: 12, borderRadius: 10, border: "1px solid #ccc", fontSize: 16 }}
-        />
+        <input style={inp} placeholder="Username" value={username} onChange={(e) => setUsername(e.target.value)} />
+        <input style={inp} type="password" placeholder="Password" value={password}
+          onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === "Enter" && submit()} />
         {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
-        <button
-          onClick={submit}
-          disabled={busy || !username || !password}
-          style={{ padding: 12, borderRadius: 10, border: "none", background: "#0f6e56", color: "#fff", fontSize: 16, cursor: "pointer" }}
-        >
-          {busy ? "Masuk…" : "Masuk"}
-        </button>
+        <button style={btn} onClick={submit} disabled={busy || !username || !password}>{busy ? "Masuk…" : "Masuk"}</button>
       </div>
+    </div>
+  );
+}
+
+function WilayahCascade({ value, onChange }) {
+  const [kapList, setKapList] = useState([]);
+  const [kalList, setKalList] = useState([]);
+  const [padList, setPadList] = useState([]);
+
+  useEffect(() => { jget("/wilayah?level=kapanewon").then(setKapList).catch(() => {}); }, []);
+  useEffect(() => {
+    if (value.kapanewon_id) jget(`/wilayah?parent_id=${value.kapanewon_id}`).then(setKalList).catch(() => setKalList([]));
+    else setKalList([]);
+  }, [value.kapanewon_id]);
+  useEffect(() => {
+    if (value.kalurahan_id) jget(`/wilayah?parent_id=${value.kalurahan_id}`).then(setPadList).catch(() => setPadList([]));
+    else setPadList([]);
+  }, [value.kalurahan_id]);
+
+  return (
+    <div style={{ display: "grid", gap: 8 }}>
+      <select style={inp} value={value.kapanewon_id || ""}
+        onChange={(e) => onChange({ kapanewon_id: e.target.value || null, kalurahan_id: null, padukuhan_id: null })}>
+        <option value="">— Kapanewon —</option>
+        {kapList.map((w) => <option key={w.id} value={w.id}>{w.nama}</option>)}
+      </select>
+      <select style={inp} value={value.kalurahan_id || ""} disabled={!value.kapanewon_id}
+        onChange={(e) => onChange({ ...value, kalurahan_id: e.target.value || null, padukuhan_id: null })}>
+        <option value="">— Kalurahan —</option>
+        {kalList.map((w) => <option key={w.id} value={w.id}>{w.nama}</option>)}
+      </select>
+      <select style={inp} value={value.padukuhan_id || ""} disabled={!value.kalurahan_id}
+        onChange={(e) => onChange({ ...value, padukuhan_id: e.target.value || null })}>
+        <option value="">{padList.length ? "— Padukuhan —" : "— Padukuhan (belum ada data) —"}</option>
+        {padList.map((w) => <option key={w.id} value={w.id}>{w.nama}</option>)}
+      </select>
+    </div>
+  );
+}
+
+function PeternakForm({ onCreated, onCancel }) {
+  const [f, setF] = useState({ nama: "", kontak: "", nik: "", alamat_detail: "", catatan: "" });
+  const [wil, setWil] = useState({ kapanewon_id: null, kalurahan_id: null, padukuhan_id: null });
+  const [koord, setKoord] = useState(null);
+  const [gps, setGps] = useState("");
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  function ambilGPS() {
+    if (!navigator.geolocation) { setGps("GPS tidak tersedia"); return; }
+    setGps("mengambil…");
+    navigator.geolocation.getCurrentPosition(
+      (pos) => { setKoord({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setGps(""); },
+      () => setGps("gagal ambil lokasi"),
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
+  async function submit() {
+    setErr(null);
+    setBusy(true);
+    try {
+      const body = { ...f, ...wil };
+      if (!body.nik) delete body.nik;
+      if (koord) body.koordinat = koord;
+      const p = await jpost("/peternak", body);
+      onCreated(p);
+    } catch (e) {
+      setErr(String(e.message || e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div style={{ ...card, display: "grid", gap: 10 }}>
+      <strong>Tambah Peternak</strong>
+      <input style={inp} placeholder="Nama *" value={f.nama} onChange={(e) => setF({ ...f, nama: e.target.value })} />
+      <input style={inp} placeholder="No. WA / kontak *" value={f.kontak} onChange={(e) => setF({ ...f, kontak: e.target.value })} />
+      <input style={inp} placeholder="NIK (opsional)" value={f.nik} onChange={(e) => setF({ ...f, nik: e.target.value })} />
+      <WilayahCascade value={wil} onChange={setWil} />
+      <input style={inp} placeholder="Alamat detail (RT/RW, patokan)" value={f.alamat_detail} onChange={(e) => setF({ ...f, alamat_detail: e.target.value })} />
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <button type="button" style={btnGhost} onClick={ambilGPS}>📍 Ambil lokasi GPS</button>
+        <span style={{ fontSize: 13, color: "#666" }}>
+          {koord ? `${koord.lat.toFixed(5)}, ${koord.lng.toFixed(5)}` : gps || "belum diambil"}
+        </span>
+      </div>
+      {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button style={btn} disabled={busy || !f.nama || !f.kontak} onClick={submit}>{busy ? "Menyimpan…" : "Simpan"}</button>
+        <button style={btnGhost} onClick={onCancel}>Batal</button>
+      </div>
+    </div>
+  );
+}
+
+function TernakForm({ peternakId, onCreated, onCancel }) {
+  const [spesiesList, setSpesiesList] = useState([]);
+  const [rasList, setRasList] = useState([]);
+  const [f, setF] = useState({ spesies: "", ras_id: "", mode: "individu", eartag: "", jenis_kelamin: "", tgl_lahir: "", jml_deklarasi: "" });
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => { jget("/ras/spesies").then(setSpesiesList).catch(() => {}); }, []);
+  useEffect(() => {
+    if (f.spesies) jget(`/ras?spesies=${encodeURIComponent(f.spesies)}`).then(setRasList).catch(() => setRasList([]));
+    else setRasList([]);
+  }, [f.spesies]);
+
+  async function submit() {
+    setErr(null);
+    setBusy(true);
+    try {
+      const body = { peternak_id: peternakId, spesies: f.spesies, mode: f.mode };
+      if (f.ras_id) body.ras_id = f.ras_id;
+      if (f.mode === "individu") {
+        if (f.eartag) body.eartag = f.eartag;
+        if (f.jenis_kelamin) body.jenis_kelamin = f.jenis_kelamin;
+        if (f.tgl_lahir) body.tgl_lahir = f.tgl_lahir;
+      } else if (f.jml_deklarasi) {
+        body.jml_deklarasi = parseInt(f.jml_deklarasi, 10);
+      }
+      const t = await jpost("/ternak", body);
+      onCreated(t);
+    } catch (e) {
+      setErr(String(e.message || e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div style={{ ...card, display: "grid", gap: 10, background: "#fafafa" }}>
+      <strong>Tambah Ternak</strong>
+      <select style={inp} value={f.spesies} onChange={(e) => setF({ ...f, spesies: e.target.value, ras_id: "" })}>
+        <option value="">— Spesies * —</option>
+        {spesiesList.map((s) => <option key={s} value={s}>{s}</option>)}
+      </select>
+      <select style={inp} value={f.ras_id} disabled={!f.spesies} onChange={(e) => setF({ ...f, ras_id: e.target.value })}>
+        <option value="">{rasList.length ? "— Ras —" : "— Ras (pilih spesies dulu) —"}</option>
+        {rasList.map((r) => <option key={r.id} value={r.id}>{r.nama}</option>)}
+      </select>
+      <select style={inp} value={f.mode} onChange={(e) => setF({ ...f, mode: e.target.value })}>
+        <option value="individu">Individu (per ekor)</option>
+        <option value="populasi">Populasi (kelompok)</option>
+      </select>
+      {f.mode === "individu" ? (
+        <>
+          <input style={inp} placeholder="Eartag / nomor" value={f.eartag} onChange={(e) => setF({ ...f, eartag: e.target.value })} />
+          <select style={inp} value={f.jenis_kelamin} onChange={(e) => setF({ ...f, jenis_kelamin: e.target.value })}>
+            <option value="">— Jenis kelamin —</option>
+            <option value="betina">Betina</option>
+            <option value="jantan">Jantan</option>
+          </select>
+          <input style={inp} type="date" value={f.tgl_lahir} onChange={(e) => setF({ ...f, tgl_lahir: e.target.value })} />
+        </>
+      ) : (
+        <input style={inp} type="number" placeholder="Jumlah (deklarasi peternak)" value={f.jml_deklarasi} onChange={(e) => setF({ ...f, jml_deklarasi: e.target.value })} />
+      )}
+      {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button style={btn} disabled={busy || !f.spesies} onClick={submit}>{busy ? "Menyimpan…" : "Simpan ternak"}</button>
+        <button style={btnGhost} onClick={onCancel}>Batal</button>
+      </div>
+    </div>
+  );
+}
+
+function TernakList({ peternakId, refreshKey }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    jget(`/ternak?peternak_id=${peternakId}`).then(setItems).catch(() => setItems([])).finally(() => setLoading(false));
+  }, [peternakId]);
+  useEffect(() => { load(); }, [load, refreshKey]);
+
+  async function mutasi(t, jenis) {
+    const label = { jual: "dijual", mati: "mati", potong: "dipotong" }[jenis];
+    if (!window.confirm(`Tandai ternak ini ${label}?`)) return;
+    try {
+      await jpost(`/ternak/${t.id}/mutasi`, { jenis });
+      load();
+    } catch (e) {
+      window.alert(e.message || e);
+    }
+  }
+
+  if (loading) return <div style={{ color: "#888" }}>memuat ternak…</div>;
+  if (!items.length) return <div style={{ color: "#888" }}>Belum ada ternak.</div>;
+
+  return (
+    <div style={{ display: "grid", gap: 8 }}>
+      {items.map((t) => (
+        <div key={t.id} style={{ ...card, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+          <div>
+            <div style={{ fontWeight: 500 }}>
+              {t.spesies}{t.eartag ? ` · ${t.eartag}` : ""}{t.mode === "populasi" && t.jml_deklarasi ? ` · ${t.jml_deklarasi} ekor` : ""}
+            </div>
+            <div style={{ fontSize: 13, color: "#666" }}>
+              <span style={{ color: STATUS_COLOR[t.status] || "#333", fontWeight: 500 }}>{t.status}</span>
+              {t.jenis_kelamin ? ` · ${t.jenis_kelamin}` : ""}
+            </div>
+          </div>
+          {t.status === "aktif" && (
+            <div style={{ display: "flex", gap: 6 }}>
+              <button style={btnGhost} onClick={() => mutasi(t, "jual")}>Jual</button>
+              <button style={btnGhost} onClick={() => mutasi(t, "mati")}>Mati</button>
+              <button style={btnGhost} onClick={() => mutasi(t, "potong")}>Potong</button>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PeternakDetail({ peternak, onBack }) {
+  const [showForm, setShowForm] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  return (
+    <div style={{ display: "grid", gap: 14 }}>
+      <button style={btnGhost} onClick={onBack}>← Kembali ke daftar</button>
+      <div style={card}>
+        <h2 style={{ margin: "0 0 4px" }}>{peternak.nama}</h2>
+        <div style={{ color: "#666", fontSize: 14 }}>{peternak.kontak}{peternak.nik ? ` · NIK ${peternak.nik}` : ""}</div>
+        {peternak.koordinat && (
+          <a style={{ fontSize: 14, color: "#0f6e56" }} target="_blank" rel="noreferrer"
+            href={`https://www.google.com/maps/dir/?api=1&destination=${peternak.koordinat.coordinates[1]},${peternak.koordinat.coordinates[0]}`}>
+            📍 Buka rute di Google Maps
+          </a>
+        )}
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <strong>Ternak</strong>
+        <button style={btn} onClick={() => setShowForm((s) => !s)}>{showForm ? "Tutup" : "+ Tambah ternak"}</button>
+      </div>
+      {showForm && <TernakForm peternakId={peternak.id} onCancel={() => setShowForm(false)}
+        onCreated={() => { setShowForm(false); setRefreshKey((k) => k + 1); }} />}
+      <TernakList peternakId={peternak.id} refreshKey={refreshKey} />
+    </div>
+  );
+}
+
+function PeternakPage() {
+  const [q, setQ] = useState("");
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [selected, setSelected] = useState(null);
+
+  const load = useCallback((query) => {
+    setLoading(true);
+    jget(`/peternak${query ? `?q=${encodeURIComponent(query)}` : ""}`).then(setItems).catch(() => setItems([])).finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    const id = setTimeout(() => load(q), 300);
+    return () => clearTimeout(id);
+  }, [q, load]);
+
+  if (selected) return <PeternakDetail peternak={selected} onBack={() => { setSelected(null); load(q); }} />;
+
+  return (
+    <div style={{ display: "grid", gap: 12 }}>
+      <div style={{ display: "flex", gap: 8 }}>
+        <input style={inp} placeholder="Cari peternak (nama/kontak/NIK)…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <button style={btn} onClick={() => setShowForm((s) => !s)}>{showForm ? "Tutup" : "+ Peternak"}</button>
+      </div>
+      {showForm && <PeternakForm onCancel={() => setShowForm(false)} onCreated={(p) => { setShowForm(false); setSelected(p); }} />}
+      {loading ? <div style={{ color: "#888" }}>memuat…</div> : (
+        <div style={{ display: "grid", gap: 8 }}>
+          {items.length === 0 && <div style={{ color: "#888" }}>Belum ada peternak{q ? " yang cocok" : ""}.</div>}
+          {items.map((p) => (
+            <div key={p.id} style={{ ...card, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }} onClick={() => setSelected(p)}>
+              <div>
+                <div style={{ fontWeight: 500 }}>{p.nama}</div>
+                <div style={{ fontSize: 13, color: "#666" }}>{p.kontak}</div>
+              </div>
+              <span style={{ color: "#0f6e56" }}>›</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 function Shell({ user, onLogout }) {
   const [role, setRole] = useState(user.roles.length === 1 ? user.roles[0] : null);
-
-  const judul = {
-    admin: "Beranda Admin",
-    petugas: "Beranda Petugas",
-    peternak: "Beranda Peternak",
-  };
+  const judul = { admin: "Beranda Admin", petugas: "Beranda Petugas", peternak: "Beranda Peternak" };
 
   if (!role) {
     return (
@@ -90,44 +364,34 @@ function Shell({ user, onLogout }) {
         <p style={{ color: "#666" }}>Pilih peran:</p>
         <div style={{ display: "grid", gap: 10 }}>
           {user.roles.map((r) => (
-            <button
-              key={r}
-              onClick={() => setRole(r)}
-              style={{ padding: 12, borderRadius: 10, border: "1px solid #ccc", fontSize: 16, cursor: "pointer", textTransform: "capitalize" }}
-            >
-              {r}
-            </button>
+            <button key={r} style={{ ...btnGhost, textTransform: "capitalize" }} onClick={() => setRole(r)}>{r}</button>
           ))}
         </div>
-        <button onClick={onLogout} style={{ marginTop: 16, background: "none", border: "none", color: "#c00", cursor: "pointer" }}>
-          Keluar
-        </button>
+        <button onClick={onLogout} style={{ marginTop: 16, background: "none", border: "none", color: "#c00", cursor: "pointer" }}>Keluar</button>
       </div>
     );
   }
 
   const desktop = role === "admin";
   return (
-    <div style={{ maxWidth: desktop ? 960 : 480, margin: desktop ? "5vh auto" : "8vh auto", padding: 24 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <div style={{ maxWidth: desktop ? 880 : 520, margin: desktop ? "4vh auto" : "2vh auto", padding: 16 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <div>
-          <h1 style={{ fontWeight: 500, margin: 0 }}>{judul[role] || "Beranda"}</h1>
-          <p style={{ color: "#666", margin: "4px 0 0" }}>
+          <h1 style={{ fontWeight: 500, margin: 0, fontSize: 22 }}>{judul[role] || "Beranda"}</h1>
+          <p style={{ color: "#666", margin: "2px 0 0", fontSize: 14 }}>
             {user.nama} · {role}
             {user.roles.length > 1 && (
-              <button onClick={() => setRole(null)} style={{ marginLeft: 8, background: "none", border: "none", color: "#0f6e56", cursor: "pointer" }}>
-                ganti peran
-              </button>
+              <button onClick={() => setRole(null)} style={{ marginLeft: 8, background: "none", border: "none", color: "#0f6e56", cursor: "pointer" }}>ganti peran</button>
             )}
           </p>
         </div>
-        <button onClick={onLogout} style={{ background: "none", border: "1px solid #ccc", borderRadius: 8, padding: "6px 12px", cursor: "pointer" }}>
-          Keluar
-        </button>
+        <button onClick={onLogout} style={btnGhost}>Keluar</button>
       </div>
-      <div style={{ marginTop: 24, padding: 20, border: "1px dashed #ccc", borderRadius: 12, color: "#888" }}>
-        Fitur untuk peran ini menyusul di slice berikutnya.
-      </div>
+      {(role === "admin" || role === "petugas") ? (
+        <PeternakPage />
+      ) : (
+        <div style={{ ...card, color: "#888" }}>Beranda peternak menyusul di slice berikutnya.</div>
+      )}
     </div>
   );
 }
@@ -138,10 +402,7 @@ export default function App() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    if (!token) { setLoading(false); return; }
     api("/auth/me")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then(setUser)
