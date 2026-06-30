@@ -15,6 +15,11 @@ router = APIRouter(prefix="/pelayanan", tags=["pelayanan"])
 KATEGORI_DIDUKUNG = {"KESWAN"}
 
 
+class FotoIn(BaseModel):
+    key: str
+    content_type: str = "image/jpeg"
+
+
 class HewanIn(BaseModel):
     ternak_id: Optional[str] = None
     jenis_hewan: str
@@ -35,6 +40,7 @@ class PelayananIn(BaseModel):
     prognosa: Optional[str] = None            # Fausta | Dubius | Infausta
     metode_layanan: Optional[str] = None
     keterangan: Optional[str] = None
+    foto: Optional[list[FotoIn]] = None
 
 
 @router.post("")
@@ -65,6 +71,10 @@ async def create_pelayanan(body: PelayananIn, user=Depends(require_roles("petuga
         "prognosa": body.prognosa,
         "metode_layanan": body.metode_layanan,
         "keterangan": body.keterangan,
+        "foto": [
+            {"key": f.key, "content_type": f.content_type, "diunggah_oleh": user["id"], "diunggah_pada": now}
+            for f in (body.foto or [])
+        ],
         "detail": {"kategori": body.kategori},
         "sumber_input": "manual",
         "dikonfirmasi_oleh": None,
