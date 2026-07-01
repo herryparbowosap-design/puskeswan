@@ -215,3 +215,127 @@ async def mendekati_kedaluwarsa(
     for r in rows:
         r["kedaluwarsa"] = bool(r.get("exp") and r["exp"] < hari_ini)
     return rows
+
+
+# --------------------------------------------------------------- OPNAME
+class OpnameItemIn(BaseModel):
+    item_id: str
+    fisik: Optional[float] = None
+
+
+class OpnamePatchIn(BaseModel):
+    items: list[OpnameItemIn] = []
+    catatan: Optional[str] = None
+
+
+@router.post("/opname")
+async def mulai_opname(tipe: Optional[str] = None, user=Depends(require_roles("petugas", "admin"))):
+    """Mulai sesi opname: snapshot stok sistem untuk item aktif (status draft)."""
+    db = get_db()
+    flt = {"aktif": {"$ne": False}}
+    if tipe in TIPE:
+        flt["tipe"] = tipe
+    items = await db.stok_item.find(flt, {"_id": 0, "id": 1, "nama": 1, "satuan": 1, "tipe": 1}).sort("nama", 1).to_list(2000)
+    saldo = await _saldo_map(db, [i["id"] for i in items])
+    now = datetime.now(timezone.utc)
+    doc = {
+        "id": uuid.uuid4().hex,
+        "tgl": now.date().isoformat(),
+        "status": "draft",
+        "tipe": tipe if tipe in TIPE else "semua",
+        "catatan": None,
+        "items": [{
+            "item_id": i["id"], "nama": i["nama"], "satuan": i.get("satuan"), "tipe": i.get("tipe"),
+            "sistem_awal": _rapikan(saldo.get(i["id"], 0)), "fisik": None,
+        } for i in items],
+        "petugas_id": user["id"],
+        "created_at": now,
+        "selesai_at": None,
+    }
+    await db.stok_opname.insert_one(doc)
+    doc.pop("_id", None)
+    return doc
+
+
+@router.get("/opname")
+async def list_opname(_user=Depends(require_roles("petugas", "admin"))):
+    rows = await get_db().stok_opname.find({}, {"_id": 0, "items": 0}).sort("created_at", -1).limit(100).to_list(100)
+    return rows
+
+
+@router.get("/opname/{oid}")
+async def detail_opname(oid: str, _user=Depends(require_roles("petugas", "admin"))):
+    o = await get_db().stok_opname.find_one({"id": oid}, {"_id": 0})
+    if not o:
+        raise HTTPException(404, "sesi opname tidak ditemukan")
+    return o
+
+
+@router.patch("/opname/{oid}")
+async def isi_opname(oid: str, body: OpnamePatchIn, _user=Depends(require_roles("petugas", "admin"))):
+    """Simpan hasil hitung fisik (progresif). Hanya sesi draft."""
+    db = get_db()
+    o = await db.stok_opname.find_one({"id": oid}, {"_id": 0})
+    if not o:
+        raise HTTPException(404, "sesi opname tidak ditemukan")
+    if o.get("status") != "draft":
+        raise HTTPException(409, "sesi sudah selesai")
+    fisik_map = {x.item_id: x.fisik for x in body.items}
+    for it in o["items"]:
+        if it["item_id"] in fisik_map:
+            it["fisik"] = fisik_map[it["item_id"]]
+    upd = {"items": o["items"]}
+    if body.catatan is not None:
+        upd["catatan"] = body.catatan
+    await db.stok_opname.update_one({"id": oid}, {"$set": upd})
+    return {"ok": True}
+
+
+@router.post("/opname/{oid}/finalisasi")
+async def finalisasi_opname(oid: str, user=Depends(require_roles("petugas", "admin"))):
+    """Terapkan selisih sebagai transaksi penyesuaian. Saldo item disamakan ke fisik.
+    Selisih dihitung ulang terhadap saldo SAAT INI (bukan snapshot), agar akurat."""
+    db = get_db()
+    o = await db.stok_opname.find_one({"id": oid}, {"_id": 0})
+    if not o:
+        raise HTTPException(404, "sesi opname tidak ditemukan")
+    if o.get("status") != "draft":
+        raise HTTPException(409, "sesi sudah selesai")
+    now = datetime.now(timezone.utc)
+    ids = [it["item_id"] for it in o["items"] if it.get("fisik") is not None]
+    saldo = await _saldo_map(db, ids)
+    n_sesuai = 0
+    total_delta = 0.0
+    for it in o["items"]:
+        if it.get("fisik") is None:
+            continue
+        current = saldo.get(it["item_id"], 0)
+        delta = float(it["fisik"]) - current
+        it["sistem_akhir"] = _rapikan(current)
+        it["selisih"] = _rapikan(delta)
+        if delta != 0:
+            await db.stok_transaksi.insert_one({
+                "id": uuid.uuid4().hex,
+                "item_id": it["item_id"], "item_nama": it["nama"], "satuan": it.get("satuan"),
+                "jenis": "penyesuaian", "mutasi": delta,
+                "tgl": now.date().isoformat(), "batch": None, "exp": None,
+                "sumber": "opname", "catatan": f"opname {o['tgl']}", "ref_opname": oid,
+                "petugas_id": user["id"], "created_at": now,
+            })
+            n_sesuai += 1
+            total_delta += delta
+    await db.stok_opname.update_one({"id": oid}, {"$set": {
+        "status": "selesai", "items": o["items"], "selesai_at": now, "selesai_oleh": user["id"],
+    }})
+    return {"ok": True, "penyesuaian_dibuat": n_sesuai, "total_selisih": _rapikan(total_delta)}
+
+
+@router.delete("/opname/{oid}")
+async def hapus_opname(oid: str, _user=Depends(require_roles("admin"))):
+    o = await get_db().stok_opname.find_one({"id": oid}, {"_id": 0, "status": 1})
+    if not o:
+        raise HTTPException(404, "tidak ditemukan")
+    if o.get("status") == "selesai":
+        raise HTTPException(409, "sesi selesai tak boleh dihapus (audit)")
+    await get_db().stok_opname.delete_one({"id": oid})
+    return {"ok": True}
