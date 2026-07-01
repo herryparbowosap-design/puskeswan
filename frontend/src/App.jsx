@@ -138,11 +138,13 @@ function WilayahCascade({ value, onChange }) {
         <option value="">— Kalurahan —</option>
         {kalList.map((w) => <option key={w.id} value={w.id}>{w.nama}</option>)}
       </select>
-      <select style={inp} value={value.padukuhan_id || ""} disabled={!value.kalurahan_id}
-        onChange={(e) => onChange({ ...value, padukuhan_id: e.target.value || null })}>
-        <option value="">{padList.length ? "— Padukuhan —" : "— Padukuhan (belum ada data) —"}</option>
-        {padList.map((w) => <option key={w.id} value={w.id}>{w.nama}</option>)}
-      </select>
+      {padList.length > 0 && (
+        <select style={inp} value={value.padukuhan_id || ""} disabled={!value.kalurahan_id}
+          onChange={(e) => onChange({ ...value, padukuhan_id: e.target.value || null })}>
+          <option value="">— Padukuhan —</option>
+          {padList.map((w) => <option key={w.id} value={w.id}>{w.nama}</option>)}
+        </select>
+      )}
     </div>
   );
 }
