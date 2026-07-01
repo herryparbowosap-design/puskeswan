@@ -1169,6 +1169,34 @@ function ObatForm({ initial, onSaved, onCancel }) {
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
   const [aiBusy, setAiBusy] = useState(false);
+  const [namaBusy, setNamaBusy] = useState(false);
+
+  async function isiDariNama() {
+    const nm = (f.nama_dagang || "").trim();
+    if (nm.length < 2) { setErr("Ketik nama dagang obat dulu."); return; }
+    setErr(null);
+    setNamaBusy(true);
+    try {
+      const d = await jpost("/ai/info-obat", { nama: nm });
+      const satuanOk = ["ml", "tablet", "bolus", "sachet", "kapsul", "gram"];
+      const ruteOk = ["IM", "IV", "SC", "IM/IV", "oral", "topikal"];
+      setF((p) => ({
+        ...p,
+        nama_dagang: d.nama_dagang ?? p.nama_dagang,
+        zat_aktif: d.zat_aktif ?? p.zat_aktif,
+        konsentrasi: d.konsentrasi ?? p.konsentrasi,
+        satuan: d.satuan && satuanOk.includes(String(d.satuan).toLowerCase()) ? String(d.satuan).toLowerCase() : p.satuan,
+        dosis_per_kg: d.dosis_per_kg ?? p.dosis_per_kg,
+        rute: d.rute && ruteOk.includes(d.rute) ? d.rute : p.rute,
+        waktu_henti_daging_hari: d.waktu_henti_daging_hari ?? p.waktu_henti_daging_hari,
+        waktu_henti_susu_jam: d.waktu_henti_susu_jam ?? p.waktu_henti_susu_jam,
+      }));
+    } catch (e) {
+      setErr(String(e.message || e));
+    } finally {
+      setNamaBusy(false);
+    }
+  }
 
   const num = (v) => (v === "" || v === null ? null : parseFloat(v));
   const int = (v) => (v === "" || v === null ? null : parseInt(v, 10));
@@ -1245,7 +1273,11 @@ function ObatForm({ initial, onSaved, onCancel }) {
         </label>
         <div style={{ fontSize: 11, color: "#999" }}>Bisa pilih beberapa foto sekaligus (mis. sisi depan &amp; belakang). AI membaca yang tercetak di label &amp; menggabungkannya — periksa &amp; koreksi angka (konsentrasi/dosis) sebelum simpan.</div>
       </div>
-      <input style={inp} placeholder="Nama dagang *" value={f.nama_dagang} onChange={(e) => setF({ ...f, nama_dagang: e.target.value })} />
+      <div style={{ display: "flex", gap: 8 }}>
+        <input style={inp} placeholder="Nama dagang *" value={f.nama_dagang} onChange={(e) => setF({ ...f, nama_dagang: e.target.value })} />
+        <button type="button" style={{ ...btnGhost, whiteSpace: "nowrap", borderColor: "#d6a700", color: "#9a7b00" }} disabled={namaBusy} onClick={isiDariNama}>{namaBusy ? "Mengisi…" : "✨ AI isi dari nama"}</button>
+      </div>
+      <div style={{ fontSize: 11, color: "#999", marginTop: -4 }}>Ketik nama dagang lalu tekan tombol — AI mengisi zat aktif/konsentrasi/dosis sebagai <strong>saran</strong>. Wajib diverifikasi dengan kemasan asli sebelum simpan.</div>
       <input style={inp} placeholder="Zat aktif (mis. Oksitetrasiklin)" value={f.zat_aktif} onChange={(e) => setF({ ...f, zat_aktif: e.target.value })} />
       <div style={{ display: "flex", gap: 8 }}>
         <input style={inp} type="number" step="0.01" placeholder="Konsentrasi (mg per satuan)" value={f.konsentrasi} onChange={(e) => setF({ ...f, konsentrasi: e.target.value })} />
