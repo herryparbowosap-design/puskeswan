@@ -111,6 +111,27 @@ function Login({ onLogin }) {
   );
 }
 
+function parseKoord(teks) {
+  if (!teks) return null;
+  const s = String(teks).trim();
+  // Google Maps URL: @lat,lng  atau  q=/query=/ll=lat,lng  atau  !3dLAT!4dLNG
+  const cand = [];
+  let m = s.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+  if (m) cand.push([m[1], m[2]]);
+  m = s.match(/[?&](?:q|query|ll|destination)=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+  if (m) cand.push([m[1], m[2]]);
+  m = s.match(/!3d(-?\d{1,3}\.\d+)!4d(-?\d{1,3}\.\d+)/);
+  if (m) cand.push([m[1], m[2]]);
+  // "lat, lng" atau "lat lng" polos
+  m = s.match(/^\s*(-?\d{1,3}\.\d+)\s*[,\s]\s*(-?\d{1,3}\.\d+)\s*$/);
+  if (m) cand.push([m[1], m[2]]);
+  for (const [a, b] of cand) {
+    const lat = parseFloat(a), lng = parseFloat(b);
+    if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) return { lat, lng };
+  }
+  return null;
+}
+
 function WilayahCascade({ value, onChange }) {
   const [kapList, setKapList] = useState([]);
   const [kalList, setKalList] = useState([]);
@@ -237,7 +258,11 @@ function PeternakForm({ initial, onSaved, onCancel }) {
         <span style={{ fontSize: 13, color: "#666" }}>
           {koord ? `${koord.lat.toFixed(5)}, ${koord.lng.toFixed(5)}` : gps || "belum diambil"}
         </span>
+        {koord && <button type="button" style={{ ...btnGhost, padding: "2px 8px", fontSize: 12, color: "#c00", borderColor: "#e0b4b4" }} onClick={() => { setKoord(null); setGps(""); }}>Hapus</button>}
       </div>
+      <input style={inp} placeholder="atau tempel koordinat / link Google Maps (mis. -7.7561, 110.2989)"
+        onChange={(e) => { const k = parseKoord(e.target.value); if (k) { setKoord(k); setGps(""); } else if (e.target.value.trim()) setGps("format koordinat tidak dikenali"); }} />
+      <div style={{ fontSize: 11, color: "#999", marginTop: -4 }}>Buka Google Maps → tekan lama titik lokasi → salin koordinatnya, lalu tempel di sini.</div>
       {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
       <div style={{ display: "flex", gap: 8 }}>
         <button style={btn} disabled={busy || !f.nama || !f.kontak} onClick={submit}>{busy ? "Menyimpan…" : (isEdit ? "Simpan perubahan" : "Simpan")}</button>
@@ -1539,10 +1564,13 @@ function PublicDaftar() {
         <div style={{ fontSize: 13, color: "#666" }}>Wilayah</div>
         <WilayahCascade value={wil} onChange={setWil} />
         <input style={inp} placeholder="Alamat detail (RT/RW, patokan)" value={f.alamat_detail} onChange={(e) => setF({ ...f, alamat_detail: e.target.value })} />
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
           <button type="button" style={btnGhost} onClick={ambilGPS}>📍 Ambil lokasi GPS</button>
-          <span style={{ fontSize: 13, color: "#666" }}>{gps}</span>
+          <span style={{ fontSize: 13, color: "#666" }}>{koord ? `${koord.lat.toFixed(5)}, ${koord.lng.toFixed(5)}` : gps}</span>
+          {koord && <button type="button" style={{ ...btnGhost, padding: "2px 8px", fontSize: 12, color: "#c00", borderColor: "#e0b4b4" }} onClick={() => { setKoord(null); setGps(""); }}>Hapus</button>}
         </div>
+        <input style={inp} placeholder="atau tempel koordinat / link Google Maps"
+          onChange={(e) => { const k = parseKoord(e.target.value); if (k) { setKoord(k); setGps("koordinat dari tempelan ✓"); } else if (e.target.value.trim()) setGps("format koordinat tidak dikenali"); }} />
 
         <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>Ternak yang dimiliki</div>
         <TernakDraftEditor items={ternak} onChange={setTernak} />
