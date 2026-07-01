@@ -2416,18 +2416,159 @@ function StokDetail({ itemId, isAdmin, onBack, onChanged }) {
   );
 }
 
+function OpnameDetail({ opnameId, onBack }) {
+  const [o, setO] = useState(null);
+  const [fisik, setFisik] = useState({});
+  const [catatan, setCatatan] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState(null);
+
+  const load = useCallback(() => {
+    jget(`/stok/opname/${opnameId}`).then((d) => {
+      setO(d);
+      const fm = {};
+      d.items.forEach((it) => { if (it.fisik != null) fm[it.item_id] = String(it.fisik); });
+      setFisik(fm);
+      setCatatan(d.catatan || "");
+    }).catch(() => setO(null));
+  }, [opnameId]);
+  useEffect(() => { load(); }, [load]);
+
+  if (!o) return <div style={{ color: "#888" }}>Memuat…</div>;
+  const draft = o.status === "draft";
+
+  async function simpan() {
+    setErr(null); setBusy(true);
+    try {
+      const items = Object.entries(fisik).filter(([, v]) => v !== "").map(([item_id, v]) => ({ item_id, fisik: parseFloat(v) }));
+      await jpatch(`/stok/opname/${opnameId}`, { items, catatan });
+      load();
+    } catch (e) { setErr(String(e.message || e)); } finally { setBusy(false); }
+  }
+  async function finalisasi() {
+    if (!window.confirm("Finalisasi opname? Selisih akan dicatat sebagai penyesuaian dan saldo disamakan ke stok fisik. Tidak bisa dibatalkan.")) return;
+    setErr(null); setBusy(true);
+    try {
+      const items = Object.entries(fisik).filter(([, v]) => v !== "").map(([item_id, v]) => ({ item_id, fisik: parseFloat(v) }));
+      await jpatch(`/stok/opname/${opnameId}`, { items, catatan });
+      const res = await jpost(`/stok/opname/${opnameId}/finalisasi`, {});
+      window.alert(`Opname selesai. ${res.penyesuaian_dibuat} penyesuaian dibuat (total selisih ${res.total_selisih}).`);
+      load();
+    } catch (e) { setErr(String(e.message || e)); } finally { setBusy(false); }
+  }
+
+  return (
+    <div style={{ display: "grid", gap: 12 }}>
+      <button style={{ ...btnGhost, justifySelf: "start" }} onClick={onBack}>← Kembali</button>
+      <div style={{ ...card, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+        <div>
+          <strong>Opname {o.tgl}</strong>
+          <div style={{ fontSize: 13, color: "#666" }}>Cakupan: {o.tipe} · {o.items.length} item</div>
+        </div>
+        <span style={{ fontSize: 12, color: draft ? "#9a6b00" : "#0f6e56", background: draft ? "#fff3d6" : "#e6f3ef", borderRadius: 999, padding: "3px 10px" }}>{draft ? "draft" : "selesai"}</span>
+      </div>
+
+      <div style={{ display: "grid", gap: 6 }}>
+        {o.items.map((it) => {
+          const sis = draft ? it.sistem_awal : it.sistem_akhir ?? it.sistem_awal;
+          const fv = draft ? fisik[it.item_id] ?? "" : it.fisik;
+          const sel = draft ? (fv === "" || fv == null ? null : parseFloat(fv) - sis) : it.selisih;
+          return (
+            <div key={it.item_id} style={{ ...card, display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600 }}>{it.nama}</div>
+                <div style={{ fontSize: 12, color: "#999" }}>sistem: {sis} {it.satuan}</div>
+              </div>
+              {draft ? (
+                <input style={{ ...inp, width: 100 }} type="number" step="0.01" placeholder="fisik"
+                  value={fisik[it.item_id] ?? ""} onChange={(e) => setFisik({ ...fisik, [it.item_id]: e.target.value })} />
+              ) : (
+                <div style={{ width: 100, textAlign: "right" }}>{it.fisik ?? "—"}</div>
+              )}
+              <div style={{ width: 70, textAlign: "right", fontWeight: 600, color: sel == null ? "#ccc" : sel === 0 ? "#0f6e56" : "#c00" }}>
+                {sel == null ? "—" : (sel > 0 ? "+" : "") + sel}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <input style={inp} placeholder="Catatan opname (opsional)" value={catatan} onChange={(e) => setCatatan(e.target.value)} disabled={!draft} />
+      {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
+      {draft && (
+        <div style={{ display: "flex", gap: 8 }}>
+          <button style={btnGhost} disabled={busy} onClick={simpan}>Simpan sementara</button>
+          <button style={btn} disabled={busy} onClick={finalisasi}>Finalisasi opname</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OpnamePanel({ isAdmin, onOpen }) {
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const load = useCallback(() => { setLoading(true); jget("/stok/opname").then(setList).catch(() => setList([])).finally(() => setLoading(false)); }, []);
+  useEffect(() => { load(); }, [load]);
+
+  async function mulai() {
+    setBusy(true);
+    try { const o = await jpost("/stok/opname", {}); onOpen(o.id); } catch (e) { window.alert(e.message || e); } finally { setBusy(false); }
+  }
+  async function hapus(id) {
+    if (!window.confirm("Hapus sesi opname draft ini?")) return;
+    try { await jdel(`/stok/opname/${id}`); load(); } catch (e) { window.alert(e.message || e); }
+  }
+
+  return (
+    <div style={{ display: "grid", gap: 12 }}>
+      <button style={btn} disabled={busy} onClick={mulai}>{busy ? "Memulai…" : "+ Mulai opname baru"}</button>
+      {loading ? <div style={{ color: "#888" }}>Memuat…</div> : list.length === 0 ? (
+        <div style={{ ...card, color: "#888" }}>Belum ada sesi opname.</div>
+      ) : (
+        <div style={{ display: "grid", gap: 8 }}>
+          {list.map((o) => (
+            <div key={o.id} style={{ ...card, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <div style={{ cursor: "pointer", flex: 1 }} onClick={() => onOpen(o.id)}>
+                <div style={{ fontWeight: 600 }}>Opname {o.tgl}</div>
+                <div style={{ fontSize: 12, color: "#999" }}>cakupan: {o.tipe}</div>
+              </div>
+              <span style={{ fontSize: 12, color: o.status === "draft" ? "#9a6b00" : "#0f6e56", background: o.status === "draft" ? "#fff3d6" : "#e6f3ef", borderRadius: 999, padding: "3px 10px" }}>{o.status}</span>
+              {isAdmin && o.status === "draft" && <button style={{ ...btnGhost, padding: "2px 8px", fontSize: 12, color: "#c00", borderColor: "#e0b4b4" }} onClick={() => hapus(o.id)}>Hapus</button>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function StokPage({ isAdmin }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [sel, setSel] = useState(null);
   const [filter, setFilter] = useState("");
+  const [mode, setMode] = useState("items");   // items | opname
+  const [opnameSel, setOpnameSel] = useState(null);
 
   const load = useCallback(() => {
     setLoading(true);
     jget("/stok/item").then(setItems).catch(() => setItems([])).finally(() => setLoading(false));
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  if (mode === "opname") {
+    return (
+      <div style={{ display: "grid", gap: 12 }}>
+        <button style={{ ...btnGhost, justifySelf: "start" }} onClick={() => { setMode("items"); setOpnameSel(null); load(); }}>← Stok</button>
+        {opnameSel
+          ? <OpnameDetail opnameId={opnameSel} onBack={() => setOpnameSel(null)} />
+          : <OpnamePanel isAdmin={isAdmin} onOpen={setOpnameSel} />}
+      </div>
+    );
+  }
 
   if (sel) return <StokDetail itemId={sel} isAdmin={isAdmin} onBack={() => { setSel(null); load(); }} onChanged={load} />;
 
@@ -2442,7 +2583,10 @@ function StokPage({ isAdmin }) {
           <button style={filter === "obat" ? btn : btnGhost} onClick={() => setFilter("obat")}>Obat</button>
           <button style={filter === "alkes" ? btn : btnGhost} onClick={() => setFilter("alkes")}>Alkes</button>
         </div>
-        <button style={btn} onClick={() => setShowForm((s) => !s)}>{showForm ? "Tutup" : "+ Item"}</button>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button style={btnGhost} onClick={() => setMode("opname")}>📋 Opname</button>
+          <button style={btn} onClick={() => setShowForm((s) => !s)}>{showForm ? "Tutup" : "+ Item"}</button>
+        </div>
       </div>
       {menipis > 0 && <div style={{ ...card, background: "#fff3d6", color: "#9a6b00", fontSize: 13 }}>⚠ {menipis} item stoknya menipis.</div>}
       {showForm && <StokItemForm onCancel={() => setShowForm(false)} onCreated={() => { setShowForm(false); load(); }} />}
