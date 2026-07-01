@@ -144,6 +144,55 @@ def _num_or_null(v):
         return None
 
 
+class InfoObatIn(BaseModel):
+    nama: str
+
+
+SYSTEM_OBAT_NAMA = (
+    "Anda asisten formularium obat hewan (veteriner) di Indonesia. Dari NAMA DAGANG/merek obat "
+    "yang diketik petugas, berikan perkiraan data formularium untuk MEMPERCEPAT pengisian. "
+    "Ini SARAN AWAL yang WAJIB diverifikasi petugas terhadap kemasan asli — JANGAN dianggap final.\n"
+    "Aturan penting:\n"
+    "- Jika Anda TIDAK yakin pada suatu angka, isi null (lebih baik kosong daripada salah). "
+    "JANGAN mengarang konsentrasi/dosis/waktu henti.\n"
+    "- konsentrasi: ANGKA mg per 1 satuan (mis. '200 mg/ml' -> 200).\n"
+    "- satuan: salah satu ml|tablet|bolus|sachet|kapsul|gram.\n"
+    "- dosis_per_kg: ANGKA mg/kg bila umum diketahui, selain itu null.\n"
+    "- rute: IM|IV|SC|oral|topikal bila umum, selain itu null.\n"
+    "- waktu_henti_daging_hari / waktu_henti_susu_jam: ANGKA bila umum diketahui, selain itu null.\n"
+    "Balas HANYA JSON valid tanpa markdown.\n"
+    'Format: {"nama_dagang": str|null, "zat_aktif": str|null, "konsentrasi": number|null, '
+    '"satuan": str|null, "dosis_per_kg": number|null, "rute": str|null, '
+    '"waktu_henti_daging_hari": number|null, "waktu_henti_susu_jam": number|null}'
+)
+
+
+@router.post("/info-obat")
+async def info_obat(body: InfoObatIn, _user=Depends(require_roles("petugas", "admin"))):
+    nama = (body.nama or "").strip()
+    if len(nama) < 2:
+        raise HTTPException(400, "nama obat terlalu pendek")
+    if not os.getenv("ANTHROPIC_API_KEY"):
+        raise HTTPException(503, "AI belum dikonfigurasi (ANTHROPIC_API_KEY kosong)")
+    try:
+        raw = await _panggil_ai(SYSTEM_OBAT_NAMA, f"Nama dagang obat: {nama[:120]}", max_tokens=400)
+    except Exception as e:
+        raise HTTPException(502, f"AI gagal: {e}")
+    data = _parse_json(raw)
+    return {
+        "nama_dagang": data.get("nama_dagang") or nama,
+        "zat_aktif": data.get("zat_aktif") or None,
+        "konsentrasi": _num_or_null(data.get("konsentrasi")),
+        "satuan": data.get("satuan") or None,
+        "dosis_per_kg": _num_or_null(data.get("dosis_per_kg")),
+        "rute": data.get("rute") or None,
+        "waktu_henti_daging_hari": _num_or_null(data.get("waktu_henti_daging_hari")),
+        "waktu_henti_susu_jam": _num_or_null(data.get("waktu_henti_susu_jam")),
+        "model": AI_MODEL,
+        "catatan": "Saran AI dari nama — WAJIB diverifikasi dengan kemasan asli sebelum simpan.",
+    }
+
+
 @router.post("/baca-obat")
 async def baca_obat(body: BacaObatIn, _user=Depends(require_roles("petugas", "admin"))):
     # Kumpulkan daftar gambar (dukung 1 foto lama atau banyak foto baru)
