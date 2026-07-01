@@ -2256,6 +2256,218 @@ function WaPetugasPage() {
   );
 }
 
+const STOK_SUMBER = {
+  masuk: ["pembelian", "droping", "hibah"],
+  keluar: ["pemakaian", "rusak", "kedaluwarsa", "lainnya"],
+  penyesuaian: ["opname", "koreksi"],
+};
+
+function StokItemForm({ onCreated, onCancel }) {
+  const [f, setF] = useState({ tipe: "obat", nama: "", satuan: "", obat_id: "", stok_minimum: "" });
+  const [obatList, setObatList] = useState([]);
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { jget("/obat").then(setObatList).catch(() => {}); }, []);
+
+  function pilihObat(id) {
+    const o = obatList.find((x) => x.id === id);
+    if (o) setF((p) => ({ ...p, obat_id: id, nama: o.nama_dagang, satuan: o.satuan || p.satuan }));
+    else setF((p) => ({ ...p, obat_id: "" }));
+  }
+  async function simpan() {
+    setErr(null);
+    if (!f.nama.trim() || !f.satuan.trim()) { setErr("Nama & satuan wajib."); return; }
+    setBusy(true);
+    try {
+      const body = { tipe: f.tipe, nama: f.nama.trim(), satuan: f.satuan.trim() };
+      if (f.obat_id) body.obat_id = f.obat_id;
+      if (f.stok_minimum !== "") body.stok_minimum = parseFloat(f.stok_minimum);
+      await jpost("/stok/item", body);
+      onCreated();
+    } catch (e) { setErr(String(e.message || e)); } finally { setBusy(false); }
+  }
+  return (
+    <div style={{ ...card, display: "grid", gap: 10, background: "#fafafa" }}>
+      <strong>Tambah Item Stok</strong>
+      <select style={inp} value={f.tipe} onChange={(e) => setF({ ...f, tipe: e.target.value, obat_id: "" })}>
+        <option value="obat">Obat</option>
+        <option value="alkes">Alat kesehatan</option>
+      </select>
+      {f.tipe === "obat" && (
+        <select style={inp} value={f.obat_id} onChange={(e) => pilihObat(e.target.value)}>
+          <option value="">— Tautkan ke formularium (opsional) —</option>
+          {obatList.map((o) => <option key={o.id} value={o.id}>{o.nama_dagang}</option>)}
+        </select>
+      )}
+      <input style={inp} placeholder="Nama item *" value={f.nama} onChange={(e) => setF({ ...f, nama: e.target.value })} />
+      <div style={{ display: "flex", gap: 8 }}>
+        <input style={inp} placeholder="Satuan (ml/pcs/box) *" value={f.satuan} onChange={(e) => setF({ ...f, satuan: e.target.value })} />
+        <input style={{ ...inp, width: 150 }} type="number" placeholder="Stok minimum" value={f.stok_minimum} onChange={(e) => setF({ ...f, stok_minimum: e.target.value })} />
+      </div>
+      {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button style={btn} disabled={busy} onClick={simpan}>{busy ? "Menyimpan…" : "Simpan item"}</button>
+        <button style={btnGhost} onClick={onCancel}>Batal</button>
+      </div>
+    </div>
+  );
+}
+
+function StokDetail({ itemId, isAdmin, onBack, onChanged }) {
+  const [data, setData] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [f, setF] = useState({ jenis: "masuk", jumlah: "", tgl: new Date().toISOString().slice(0, 10), sumber: "", batch: "", exp: "", catatan: "" });
+  const [err, setErr] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(() => { jget(`/stok/item/${itemId}`).then(setData).catch(() => setData(null)); }, [itemId]);
+  useEffect(() => { load(); }, [load]);
+
+  async function simpan() {
+    setErr(null);
+    const j = parseFloat(f.jumlah);
+    if (!f.jumlah || isNaN(j) || (f.jenis !== "penyesuaian" && j <= 0)) { setErr("Jumlah tidak valid."); return; }
+    setBusy(true);
+    try {
+      const body = { item_id: itemId, jenis: f.jenis, jumlah: j, tgl: f.tgl };
+      if (f.sumber) body.sumber = f.sumber;
+      if (f.catatan) body.catatan = f.catatan;
+      if (f.jenis === "masuk") { if (f.batch) body.batch = f.batch; if (f.exp) body.exp = f.exp; }
+      const res = await jpost("/stok/transaksi", body);
+      if (res.saldo_minus) window.alert("Perhatian: saldo item ini menjadi MINUS. Cek pencatatan.");
+      setF({ jenis: "masuk", jumlah: "", tgl: new Date().toISOString().slice(0, 10), sumber: "", batch: "", exp: "", catatan: "" });
+      setShowForm(false); load(); onChanged && onChanged();
+    } catch (e) { setErr(String(e.message || e)); } finally { setBusy(false); }
+  }
+  async function hapusTx(id) {
+    if (!window.confirm("Hapus transaksi ini? Saldo akan dihitung ulang.")) return;
+    try { await jdel(`/stok/transaksi/${id}`); load(); onChanged && onChanged(); } catch (e) { window.alert(e.message || e); }
+  }
+
+  if (!data) return <div style={{ color: "#888" }}>Memuat…</div>;
+  const it = data.item;
+  return (
+    <div style={{ display: "grid", gap: 12 }}>
+      <button style={{ ...btnGhost, justifySelf: "start" }} onClick={onBack}>← Kembali</button>
+      <div style={{ ...card, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 16 }}>{it.nama}</div>
+          <div style={{ fontSize: 13, color: "#666" }}>{it.tipe === "obat" ? "Obat" : "Alkes"}{it.stok_minimum != null ? ` · min ${it.stok_minimum}` : ""}</div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontWeight: 700, fontSize: 22, color: it.stok_rendah ? "#c00" : "#0f6e56" }}>{it.saldo} <span style={{ fontSize: 13, color: "#888" }}>{it.satuan}</span></div>
+          {it.stok_rendah && <div style={{ fontSize: 12, color: "#c00" }}>stok menipis</div>}
+        </div>
+      </div>
+
+      {showForm ? (
+        <div style={{ ...card, display: "grid", gap: 10, background: "#fafafa" }}>
+          <select style={inp} value={f.jenis} onChange={(e) => setF({ ...f, jenis: e.target.value, sumber: "" })}>
+            <option value="masuk">Masuk (penerimaan)</option>
+            <option value="keluar">Keluar (pemakaian/rusak)</option>
+            <option value="penyesuaian">Penyesuaian (koreksi/opname)</option>
+          </select>
+          <div style={{ display: "flex", gap: 8 }}>
+            <input style={inp} type="number" step="0.01" placeholder={f.jenis === "penyesuaian" ? "Jumlah (+/−)" : "Jumlah"} value={f.jumlah} onChange={(e) => setF({ ...f, jumlah: e.target.value })} />
+            <input style={{ ...inp, width: 150 }} type="date" value={f.tgl} onChange={(e) => setF({ ...f, tgl: e.target.value })} />
+          </div>
+          {f.jenis === "penyesuaian" && <div style={{ fontSize: 11, color: "#999", marginTop: -4 }}>Contoh: −3 bila fisik kurang 3, +2 bila lebih.</div>}
+          <select style={inp} value={f.sumber} onChange={(e) => setF({ ...f, sumber: e.target.value })}>
+            <option value="">— Sumber/alasan —</option>
+            {(STOK_SUMBER[f.jenis] || []).map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
+          {f.jenis === "masuk" && (
+            <div style={{ display: "flex", gap: 8 }}>
+              <input style={inp} placeholder="No. batch (opsional)" value={f.batch} onChange={(e) => setF({ ...f, batch: e.target.value })} />
+              <input style={{ ...inp, width: 170 }} type="date" title="Tanggal kedaluwarsa" value={f.exp} onChange={(e) => setF({ ...f, exp: e.target.value })} />
+            </div>
+          )}
+          <input style={inp} placeholder="Catatan (opsional)" value={f.catatan} onChange={(e) => setF({ ...f, catatan: e.target.value })} />
+          {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
+          <div style={{ display: "flex", gap: 8 }}>
+            <button style={btn} disabled={busy} onClick={simpan}>{busy ? "Menyimpan…" : "Simpan transaksi"}</button>
+            <button style={btnGhost} onClick={() => setShowForm(false)}>Batal</button>
+          </div>
+        </div>
+      ) : (
+        <button style={btn} onClick={() => setShowForm(true)}>+ Catat transaksi (masuk/keluar/penyesuaian)</button>
+      )}
+
+      <strong style={{ fontSize: 14 }}>Kartu stok</strong>
+      {data.transaksi.length === 0 ? <div style={{ color: "#888" }}>Belum ada transaksi.</div> : (
+        <div style={{ display: "grid", gap: 6 }}>
+          {data.transaksi.map((t) => (
+            <div key={t.id} style={{ ...card, display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+              <div>
+                <div style={{ fontWeight: 600, color: t.mutasi >= 0 ? "#0f6e56" : "#c00" }}>
+                  {t.mutasi >= 0 ? "+" : ""}{t.mutasi} {t.satuan} <span style={{ fontSize: 12, color: "#999", fontWeight: 400 }}>· {t.jenis}</span>
+                </div>
+                <div style={{ fontSize: 12, color: "#666" }}>
+                  {t.tgl}{t.sumber ? ` · ${t.sumber}` : ""}{t.batch ? ` · batch ${t.batch}` : ""}{t.exp ? ` · ED ${t.exp}` : ""}
+                </div>
+                {t.catatan && <div style={{ fontSize: 12, color: "#888" }}>{t.catatan}</div>}
+              </div>
+              {isAdmin && <button style={{ ...btnGhost, padding: "2px 8px", fontSize: 12, color: "#c00", borderColor: "#e0b4b4", flexShrink: 0 }} onClick={() => hapusTx(t.id)}>Hapus</button>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StokPage({ isAdmin }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [sel, setSel] = useState(null);
+  const [filter, setFilter] = useState("");
+
+  const load = useCallback(() => {
+    setLoading(true);
+    jget("/stok/item").then(setItems).catch(() => setItems([])).finally(() => setLoading(false));
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
+  if (sel) return <StokDetail itemId={sel} isAdmin={isAdmin} onBack={() => { setSel(null); load(); }} onChanged={load} />;
+
+  const tampil = filter ? items.filter((i) => i.tipe === filter) : items;
+  const menipis = items.filter((i) => i.stok_rendah).length;
+
+  return (
+    <div style={{ display: "grid", gap: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 6 }}>
+          <button style={filter === "" ? btn : btnGhost} onClick={() => setFilter("")}>Semua</button>
+          <button style={filter === "obat" ? btn : btnGhost} onClick={() => setFilter("obat")}>Obat</button>
+          <button style={filter === "alkes" ? btn : btnGhost} onClick={() => setFilter("alkes")}>Alkes</button>
+        </div>
+        <button style={btn} onClick={() => setShowForm((s) => !s)}>{showForm ? "Tutup" : "+ Item"}</button>
+      </div>
+      {menipis > 0 && <div style={{ ...card, background: "#fff3d6", color: "#9a6b00", fontSize: 13 }}>⚠ {menipis} item stoknya menipis.</div>}
+      {showForm && <StokItemForm onCancel={() => setShowForm(false)} onCreated={() => { setShowForm(false); load(); }} />}
+      {loading ? <div style={{ color: "#888" }}>Memuat…</div> : tampil.length === 0 ? (
+        <div style={{ ...card, color: "#888" }}>Belum ada item stok.</div>
+      ) : (
+        <div style={{ display: "grid", gap: 8 }}>
+          {tampil.map((i) => (
+            <div key={i.id} style={{ ...card, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, cursor: "pointer" }} onClick={() => setSel(i.id)}>
+              <div>
+                <div style={{ fontWeight: 600 }}>{i.nama} <span style={{ fontSize: 11, color: "#888", background: "#eee", borderRadius: 999, padding: "1px 7px" }}>{i.tipe === "obat" ? "obat" : "alkes"}</span></div>
+                {i.stok_minimum != null && <div style={{ fontSize: 12, color: "#999" }}>min {i.stok_minimum} {i.satuan}</div>}
+              </div>
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontWeight: 700, color: i.stok_rendah ? "#c00" : "#0f6e56" }}>{i.saldo} <span style={{ fontSize: 12, color: "#888" }}>{i.satuan}</span></div>
+                {i.stok_rendah && <div style={{ fontSize: 11, color: "#c00" }}>menipis</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Shell({ user, onLogout }) {
   const [role, setRole] = useState(user.roles.length === 1 ? user.roles[0] : null);
   const [tab, setTab] = useState("peternak");
@@ -2301,6 +2513,7 @@ function Shell({ user, onLogout }) {
           <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
             <button style={tab === "peternak" ? btn : btnGhost} onClick={() => setTab("peternak")}>Peternak</button>
             <button style={tab === "obat" ? btn : btnGhost} onClick={() => setTab("obat")}>Obat</button>
+            <button style={tab === "stok" ? btn : btnGhost} onClick={() => setTab("stok")}>Stok</button>
             <button style={tab === "pendaftaran" ? btn : btnGhost} onClick={() => { setTab("pendaftaran"); refreshPendaftaran(); }}>
               Pendaftaran{pendaftaranBaru ? ` (${pendaftaranBaru})` : ""}
             </button>
@@ -2311,6 +2524,7 @@ function Shell({ user, onLogout }) {
           </div>
           {tab === "peternak" && <PeternakPage isAdmin={user.roles.includes("admin")} />}
           {tab === "obat" && <ObatPage isAdmin={user.roles.includes("admin")} />}
+          {tab === "stok" && <StokPage isAdmin={user.roles.includes("admin")} />}
           {tab === "pendaftaran" && <PendaftaranPage onConfirmed={refreshPendaftaran} />}
           {tab === "kegiatan" && <KegiatanPage isAdmin={user.roles.includes("admin")} />}
           {tab === "laporan" && <LaporanPage />}
