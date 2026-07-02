@@ -102,6 +102,18 @@ async def create_pelayanan(body: PelayananIn, user=Depends(require_roles("petuga
     }
     await db.pelayanan.insert_one(doc)
     doc.pop("_id", None)
+    # Pengurangan stok otomatis (best-effort, tak memblok bila gagal)
+    try:
+        from stok import potong_stok_pelayanan
+        ringkas = await potong_stok_pelayanan(
+            db, doc["id"], doc.get("tgl"),
+            [o.model_dump() for o in (body.obat or [])], user
+        )
+        if ringkas["dipotong"] or ringkas["dilewati"]:
+            await db.pelayanan.update_one({"id": doc["id"]}, {"$set": {"stok": ringkas}})
+            doc["stok"] = ringkas
+    except Exception:
+        pass
     return doc
 
 
@@ -139,7 +151,13 @@ async def get_pelayanan(pid: str, _user=Depends(current_user)):
 
 @router.delete("/{pid}")
 async def delete_pelayanan(pid: str, _user=Depends(require_roles("admin"))):
-    r = await get_db().pelayanan.delete_one({"id": pid})
+    db = get_db()
+    r = await db.pelayanan.delete_one({"id": pid})
     if r.deleted_count == 0:
         raise HTTPException(404, "pelayanan tidak ditemukan")
+    try:
+        from stok import kembalikan_stok_pelayanan
+        await kembalikan_stok_pelayanan(db, pid)
+    except Exception:
+        pass
     return {"ok": True}
