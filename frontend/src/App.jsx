@@ -2263,7 +2263,7 @@ const STOK_SUMBER = {
 };
 
 function StokItemForm({ onCreated, onCancel }) {
-  const [f, setF] = useState({ tipe: "obat", nama: "", satuan: "", obat_id: "", stok_minimum: "" });
+  const [f, setF] = useState({ tipe: "obat", nama: "", satuan: "", obat_id: "", stok_minimum: "", produsen: "", kemasan: "", sediaan: "", kategori: "", gauge: "", keterangan: "" });
   const [obatList, setObatList] = useState([]);
   const [err, setErr] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -2282,6 +2282,7 @@ function StokItemForm({ onCreated, onCancel }) {
       const body = { tipe: f.tipe, nama: f.nama.trim(), satuan: f.satuan.trim() };
       if (f.obat_id) body.obat_id = f.obat_id;
       if (f.stok_minimum !== "") body.stok_minimum = parseFloat(f.stok_minimum);
+      ["produsen", "kemasan", "sediaan", "kategori", "gauge", "keterangan"].forEach((k) => { if (f[k].trim()) body[k] = f[k].trim(); });
       await jpost("/stok/item", body);
       onCreated();
     } catch (e) { setErr(String(e.message || e)); } finally { setBusy(false); }
@@ -2304,6 +2305,17 @@ function StokItemForm({ onCreated, onCancel }) {
         <input style={inp} placeholder="Satuan (ml/pcs/box) *" value={f.satuan} onChange={(e) => setF({ ...f, satuan: e.target.value })} />
         <input style={{ ...inp, width: 150 }} type="number" placeholder="Stok minimum" value={f.stok_minimum} onChange={(e) => setF({ ...f, stok_minimum: e.target.value })} />
       </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <input style={inp} placeholder="Produsen" value={f.produsen} onChange={(e) => setF({ ...f, produsen: e.target.value })} />
+        <input style={inp} placeholder="Kemasan (Botol/box)" value={f.kemasan} onChange={(e) => setF({ ...f, kemasan: e.target.value })} />
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <input style={inp} placeholder="Sediaan (100 ml / 5 ml)" value={f.sediaan} onChange={(e) => setF({ ...f, sediaan: e.target.value })} />
+        {f.tipe === "obat"
+          ? <input style={inp} placeholder="Kategori (Antibiotik/…)" value={f.kategori} onChange={(e) => setF({ ...f, kategori: e.target.value })} />
+          : <input style={inp} placeholder="Jarum/Gauge (18G)" value={f.gauge} onChange={(e) => setF({ ...f, gauge: e.target.value })} />}
+      </div>
+      <input style={inp} placeholder="Keterangan (mis. 1 box @ 100 pcs)" value={f.keterangan} onChange={(e) => setF({ ...f, keterangan: e.target.value })} />
       {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
       <div style={{ display: "flex", gap: 8 }}>
         <button style={btn} disabled={busy} onClick={simpan}>{busy ? "Menyimpan…" : "Simpan item"}</button>
@@ -2353,6 +2365,11 @@ function StokDetail({ itemId, isAdmin, onBack, onChanged }) {
         <div>
           <div style={{ fontWeight: 700, fontSize: 16 }}>{it.nama}</div>
           <div style={{ fontSize: 13, color: "#666" }}>{it.tipe === "obat" ? "Obat" : "Alkes"}{it.stok_minimum != null ? ` · min ${it.stok_minimum}` : ""}</div>
+          {(it.produsen || it.sediaan || it.kategori || it.gauge || it.keterangan) && (
+            <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>
+              {[it.produsen, it.sediaan, it.kategori, it.gauge, it.keterangan].filter(Boolean).join(" · ")}
+            </div>
+          )}
         </div>
         <div style={{ textAlign: "right" }}>
           <div style={{ fontWeight: 700, fontSize: 22, color: it.stok_rendah ? "#c00" : "#0f6e56" }}>{it.saldo} <span style={{ fontSize: 13, color: "#888" }}>{it.satuan}</span></div>
@@ -2412,6 +2429,51 @@ function StokDetail({ itemId, isAdmin, onBack, onChanged }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function StokImport({ onDone, onClose }) {
+  const [tipe, setTipe] = useState("obat");
+  const [busy, setBusy] = useState(false);
+  const [hasil, setHasil] = useState(null);
+  const [err, setErr] = useState(null);
+  async function onFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setErr(null); setBusy(true); setHasil(null);
+    try {
+      const b64 = await new Promise((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(String(r.result).split(",")[1]);
+        r.onerror = () => rej(new Error("gagal baca file"));
+        r.readAsDataURL(file);
+      });
+      const d = await jpost("/stok/import", { tipe, file_base64: b64 });
+      setHasil(d); onDone && onDone();
+    } catch (e2) { setErr(String(e2.message || e2)); } finally { setBusy(false); }
+  }
+  return (
+    <div style={{ ...card, display: "grid", gap: 10, background: "#fafafa" }}>
+      <strong>Impor stok dari Excel</strong>
+      <div style={{ fontSize: 13, color: "#666" }}>Kolom yang dibaca: Nama, Produsen, Kemasan, Sediaan, Kategori/Jarum, <strong>Kuantiti</strong> (jadi stok awal), Expired, Keterangan. Aman diimpor ulang (baris yang sama dilewati).</div>
+      <select style={inp} value={tipe} onChange={(e) => setTipe(e.target.value)}>
+        <option value="obat">File Obat</option>
+        <option value="alkes">File Alkes</option>
+      </select>
+      <label style={{ ...btn, display: "inline-block", textAlign: "center", cursor: busy ? "default" : "pointer" }}>
+        {busy ? "Mengimpor…" : "Pilih file Excel (.xlsx)"}
+        <input type="file" accept=".xlsx" style={{ display: "none" }} onChange={onFile} disabled={busy} />
+      </label>
+      {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
+      {hasil && (
+        <div style={{ fontSize: 13, color: "#0f6e56", background: "#e6f3ef", borderRadius: 8, padding: 10 }}>
+          ✅ Impor {hasil.tipe}: item baru <strong>{hasil.item_baru}</strong>, stok awal dibuat <strong>{hasil.stok_awal_dibuat}</strong>
+          {hasil.stok_awal_dilewati ? `, dilewati ${hasil.stok_awal_dilewati}` : ""}.
+        </div>
+      )}
+      <button style={btnGhost} onClick={onClose}>Tutup</button>
     </div>
   );
 }
@@ -2548,6 +2610,7 @@ function StokPage({ isAdmin }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [sel, setSel] = useState(null);
   const [filter, setFilter] = useState("");
   const [mode, setMode] = useState("items");   // items | opname
@@ -2585,10 +2648,12 @@ function StokPage({ isAdmin }) {
         </div>
         <div style={{ display: "flex", gap: 6 }}>
           <button style={btnGhost} onClick={() => setMode("opname")}>📋 Opname</button>
-          <button style={btn} onClick={() => setShowForm((s) => !s)}>{showForm ? "Tutup" : "+ Item"}</button>
+          {isAdmin && <button style={btnGhost} onClick={() => { setShowImport((s) => !s); setShowForm(false); }}>⬆ Impor</button>}
+          <button style={btn} onClick={() => { setShowForm((s) => !s); setShowImport(false); }}>{showForm ? "Tutup" : "+ Item"}</button>
         </div>
       </div>
       {menipis > 0 && <div style={{ ...card, background: "#fff3d6", color: "#9a6b00", fontSize: 13 }}>⚠ {menipis} item stoknya menipis.</div>}
+      {showImport && <StokImport onClose={() => setShowImport(false)} onDone={load} />}
       {showForm && <StokItemForm onCancel={() => setShowForm(false)} onCreated={() => { setShowForm(false); load(); }} />}
       {loading ? <div style={{ color: "#888" }}>Memuat…</div> : tampil.length === 0 ? (
         <div style={{ ...card, color: "#888" }}>Belum ada item stok.</div>
