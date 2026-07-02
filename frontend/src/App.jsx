@@ -2439,6 +2439,86 @@ function StokDetail({ itemId, isAdmin, onBack, onChanged }) {
   );
 }
 
+function StokLaporan() {
+  const now = new Date();
+  const [periode, setPeriode] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState(null);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    const [y, m] = periode.split("-");
+    jget(`/stok/laporan?tahun=${parseInt(y, 10)}&bulan=${parseInt(m, 10)}&hari_ed=90`)
+      .then(setData).catch(() => setData(null)).finally(() => setLoading(false));
+  }, [periode]);
+  useEffect(() => { load(); }, [load]);
+
+  async function unduhExcel() {
+    const [y, m] = periode.split("-");
+    try {
+      setErr(null);
+      const r = await api(`/stok/laporan/xlsx?tahun=${parseInt(y, 10)}&bulan=${parseInt(m, 10)}&hari_ed=90`);
+      if (!r.ok) throw new Error(`gagal (${r.status})`);
+      const blob = await r.blob();
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `laporan-stok-${y}-${m}.xlsx`;
+      a.click();
+    } catch (e) { setErr(String(e.message || e)); }
+  }
+
+  const menipis = data ? data.saldo.filter((i) => i.stok_rendah) : [];
+  return (
+    <div style={{ display: "grid", gap: 12 }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <input style={{ ...inp, width: 160 }} type="month" value={periode} onChange={(e) => setPeriode(e.target.value)} />
+        {data && <button style={btn} onClick={unduhExcel}>⬇ Unduh Excel</button>}
+      </div>
+      {err && <div style={{ color: "#c00", fontSize: 14 }}>{err}</div>}
+      {loading ? <div style={{ color: "#888" }}>Memuat…</div> : !data ? null : (
+        <>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {[["Item", data.ringkas.item], ["Menipis", data.ringkas.menipis], ["Mendekati ED", data.ringkas.mendekati_ed]].map(([k, v]) => (
+              <div key={k} style={{ ...card, flex: 1, minWidth: 100, textAlign: "center" }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: "#0f6e56" }}>{v}</div>
+                <div style={{ fontSize: 12, color: "#888" }}>{k}</div>
+              </div>
+            ))}
+          </div>
+
+          <strong style={{ fontSize: 14 }}>Mendekati / lewat kedaluwarsa</strong>
+          {data.mendekati_ed.length === 0 ? <div style={{ color: "#888" }}>Tidak ada.</div> : (
+            <div style={{ display: "grid", gap: 6 }}>
+              {data.mendekati_ed.map((e, i) => (
+                <div key={i} style={{ ...card, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{e.item_nama}</div>
+                    <div style={{ fontSize: 12, color: "#666" }}>masuk {e.mutasi} {e.satuan} · ED {e.exp}</div>
+                  </div>
+                  <span style={{ fontSize: 11, color: e.kedaluwarsa ? "#fff" : "#9a6b00", background: e.kedaluwarsa ? "#c00" : "#fff3d6", borderRadius: 999, padding: "3px 10px" }}>{e.kedaluwarsa ? "LEWAT ED" : "mendekati"}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <strong style={{ fontSize: 14 }}>Stok menipis</strong>
+          {menipis.length === 0 ? <div style={{ color: "#888" }}>Tidak ada.</div> : (
+            <div style={{ display: "grid", gap: 6 }}>
+              {menipis.map((i) => (
+                <div key={i.id} style={{ ...card, display: "flex", justifyContent: "space-between" }}>
+                  <span>{i.nama}</span>
+                  <span style={{ color: "#c00", fontWeight: 600 }}>{i.saldo} {i.satuan} <span style={{ color: "#999", fontWeight: 400, fontSize: 12 }}>(min {i.stok_minimum})</span></span>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function StokImport({ onDone, onClose }) {
   const [tipe, setTipe] = useState("obat");
   const [busy, setBusy] = useState(false);
@@ -2619,14 +2699,25 @@ function StokPage({ isAdmin }) {
   const [showImport, setShowImport] = useState(false);
   const [sel, setSel] = useState(null);
   const [filter, setFilter] = useState("");
-  const [mode, setMode] = useState("items");   // items | opname
+  const [mode, setMode] = useState("items");   // items | opname | laporan
   const [opnameSel, setOpnameSel] = useState(null);
+  const [edCount, setEdCount] = useState(0);
 
   const load = useCallback(() => {
     setLoading(true);
     jget("/stok/item").then(setItems).catch(() => setItems([])).finally(() => setLoading(false));
+    jget("/stok/kedaluwarsa?hari=90").then((r) => setEdCount(r.length)).catch(() => setEdCount(0));
   }, []);
   useEffect(() => { load(); }, [load]);
+
+  if (mode === "laporan") {
+    return (
+      <div style={{ display: "grid", gap: 12 }}>
+        <button style={{ ...btnGhost, justifySelf: "start" }} onClick={() => { setMode("items"); load(); }}>← Stok</button>
+        <StokLaporan />
+      </div>
+    );
+  }
 
   if (mode === "opname") {
     return (
@@ -2653,11 +2744,13 @@ function StokPage({ isAdmin }) {
           <button style={filter === "alkes" ? btn : btnGhost} onClick={() => setFilter("alkes")}>Alkes</button>
         </div>
         <div style={{ display: "flex", gap: 6 }}>
+          <button style={btnGhost} onClick={() => setMode("laporan")}>📄 Laporan</button>
           <button style={btnGhost} onClick={() => setMode("opname")}>📋 Opname</button>
           {isAdmin && <button style={btnGhost} onClick={() => { setShowImport((s) => !s); setShowForm(false); }}>⬆ Impor</button>}
           <button style={btn} onClick={() => { setShowForm((s) => !s); setShowImport(false); }}>{showForm ? "Tutup" : "+ Item"}</button>
         </div>
       </div>
+      {edCount > 0 && <div style={{ ...card, background: "#fff3d6", color: "#9a6b00", fontSize: 13, cursor: "pointer" }} onClick={() => setMode("laporan")}>⏰ {edCount} penerimaan mendekati / lewat kedaluwarsa — lihat Laporan.</div>}
       {menipis > 0 && <div style={{ ...card, background: "#fff3d6", color: "#9a6b00", fontSize: 13 }}>⚠ {menipis} item stoknya menipis.</div>}
       {showImport && <StokImport onClose={() => setShowImport(false)} onDone={load} />}
       {showForm && <StokItemForm onCancel={() => setShowForm(false)} onCreated={() => { setShowForm(false); load(); }} />}
