@@ -972,6 +972,12 @@ function PelayananList({ peternakId, refreshKey, isAdmin }) {
           {p.obat && p.obat.length > 0 && (
             <div style={{ fontSize: 14 }}>Obat: {p.obat.map((o) => `${o.nama} ${o.jumlah} ${o.satuan}`).join(", ")}</div>
           )}
+          {p.stok && p.stok.dipotong && p.stok.dipotong.length > 0 && (
+            <div style={{ fontSize: 12, color: "#0f6e56", marginTop: 2 }}>Stok terpotong: {p.stok.dipotong.map((o) => `${o.nama} −${o.jumlah} ${o.satuan}`).join(", ")}</div>
+          )}
+          {p.stok && p.stok.dilewati && p.stok.dilewati.length > 0 && (
+            <div style={{ fontSize: 12, color: "#9a6b00", marginTop: 2 }}>Stok tak terpotong: {p.stok.dilewati.map((o) => `${o.nama} (${o.alasan})`).join(", ")}</div>
+          )}
           {p.foto && p.foto.length > 0 && (
             <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
               {p.foto.map((x) => <FotoThumb key={x.key} fotoKey={x.key} />)}
