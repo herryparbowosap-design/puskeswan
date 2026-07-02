@@ -34,7 +34,20 @@ class ItemIn(BaseModel):
     satuan: str
     obat_id: Optional[str] = None          # tautan opsional ke formularium obat
     stok_minimum: Optional[float] = None    # ambang peringatan stok menipis
+    produsen: Optional[str] = None
+    kemasan: Optional[str] = None           # Botol / box / dll
+    sediaan: Optional[str] = None           # 100 ml / 5 ml / ukuran
+    kategori: Optional[str] = None          # obat: Multivitamin/Antibiotik/...
+    gauge: Optional[str] = None             # alkes: ukuran jarum (18G/21G)
+    keterangan: Optional[str] = None        # mis. "1 box @ 100 pcs"
     aktif: bool = True
+
+
+def _item_doc_fields(body):
+    return {
+        "produsen": body.produsen, "kemasan": body.kemasan, "sediaan": body.sediaan,
+        "kategori": body.kategori, "gauge": body.gauge, "keterangan": body.keterangan,
+    }
 
 
 class TransaksiIn(BaseModel):
@@ -100,6 +113,7 @@ async def create_item(body: ItemIn, user=Depends(require_roles("petugas", "admin
         "satuan": body.satuan.strip(),
         "obat_id": body.obat_id,
         "stok_minimum": body.stok_minimum,
+        **_item_doc_fields(body),
         "aktif": body.aktif,
         "created_by": user["id"],
         "created_at": now,
@@ -117,7 +131,9 @@ async def edit_item(iid: str, body: ItemIn, _user=Depends(require_roles("petugas
         raise HTTPException(400, "tipe harus obat/alkes")
     r = await get_db().stok_item.update_one({"id": iid}, {"$set": {
         "tipe": body.tipe, "nama": body.nama.strip(), "satuan": body.satuan.strip(),
-        "obat_id": body.obat_id, "stok_minimum": body.stok_minimum, "aktif": body.aktif,
+        "obat_id": body.obat_id, "stok_minimum": body.stok_minimum,
+        **_item_doc_fields(body),
+        "aktif": body.aktif,
     }})
     if r.matched_count == 0:
         raise HTTPException(404, "item tidak ditemukan")
@@ -339,3 +355,127 @@ async def hapus_opname(oid: str, _user=Depends(require_roles("admin"))):
         raise HTTPException(409, "sesi selesai tak boleh dihapus (audit)")
     await get_db().stok_opname.delete_one({"id": oid})
     return {"ok": True}
+
+
+# --------------------------------------------------------------- IMPORT EXCEL
+class ImportIn(BaseModel):
+    tipe: str                 # obat | alkes
+    file_base64: str
+
+
+def _norm(s):
+    return "".join(str(s or "").lower().split())
+
+
+def _exp_iso(v):
+    from datetime import datetime as _dt
+    if v is None or v == "":
+        return None
+    if hasattr(v, "date"):
+        try:
+            return v.date().isoformat()
+        except Exception:
+            pass
+    s = str(v).strip()
+    return s[:10] if s else None
+
+
+@router.post("/import")
+async def import_excel(body: ImportIn, user=Depends(require_roles("admin"))):
+    """Impor Excel stok → item + stok awal (transaksi masuk). Idempoten: baris yang
+    itemnya sudah ada (tipe+nama+sediaan) DILEWATI agar tak dobel."""
+    if body.tipe not in TIPE:
+        raise HTTPException(400, "tipe harus obat/alkes")
+    import base64
+    import io
+    from openpyxl import load_workbook
+    try:
+        raw = base64.b64decode(body.file_base64)
+        wb = load_workbook(io.BytesIO(raw), data_only=True)
+        ws = wb.active
+    except Exception as e:
+        raise HTTPException(400, f"gagal baca Excel: {e}")
+
+    rows = list(ws.iter_rows(values_only=True))
+    # cari baris header
+    hdr_idx, header = None, None
+    for i, r in enumerate(rows[:10]):
+        cells = [_norm(c) for c in r]
+        if ("namaproduk" in cells) or ("namaalat" in cells) or ("nama" in cells):
+            hdr_idx, header = i, cells
+            break
+    if hdr_idx is None:
+        raise HTTPException(400, "header tidak dikenali (butuh kolom Nama Produk/Nama Alat)")
+
+    def col(*names):
+        for n in names:
+            if n in header:
+                return header.index(n)
+        return None
+
+    c_nama = col("namaproduk", "namaalat", "nama")
+    c_prod = col("produsen")
+    c_kem = col("kemasan")
+    c_sed = col("sediaan")
+    c_kat = col("kategori")
+    c_gauge = col("jarum", "gauge")
+    c_qty = col("kuantiti")           # <-- stok saat ini (sesuai keputusan)
+    c_exp = col("expired", "exp")
+    c_ket = col("keterangan")
+
+    db = get_db()
+    now = datetime.now(timezone.utc)
+    item_baru, item_reuse, tx_baru, tx_lewati = 0, 0, 0, 0
+    contoh = []
+    for r in rows[hdr_idx + 1:]:
+        nama = r[c_nama] if c_nama is not None else None
+        if not nama or not str(nama).strip():
+            continue
+        nama = str(nama).strip()
+        sediaan = str(r[c_sed]).strip() if (c_sed is not None and r[c_sed] not in (None, "")) else None
+        kemasan = str(r[c_kem]).strip() if (c_kem is not None and r[c_kem] not in (None, "")) else None
+        satuan = kemasan or "unit"
+        exp = _exp_iso(r[c_exp]) if c_exp is not None else None
+        qty = 0.0
+        if c_qty is not None:
+            try:
+                qty = float(r[c_qty] or 0)
+            except (TypeError, ValueError):
+                qty = 0.0
+
+        # item: reuse bila (tipe+nama+sediaan) sudah ada, selain itu buat
+        existing = await db.stok_item.find_one({"tipe": body.tipe, "nama": nama, "sediaan": sediaan}, {"_id": 0, "id": 1})
+        if existing:
+            item_id = existing["id"]
+            item_reuse += 1
+        else:
+            item_id = uuid.uuid4().hex
+            await db.stok_item.insert_one({
+                "id": item_id, "tipe": body.tipe, "nama": nama, "satuan": satuan,
+                "obat_id": None, "stok_minimum": None,
+                "produsen": str(r[c_prod]).strip() if (c_prod is not None and r[c_prod] not in (None, "")) else None,
+                "kemasan": kemasan, "sediaan": sediaan,
+                "kategori": str(r[c_kat]).strip() if (c_kat is not None and r[c_kat] not in (None, "")) else None,
+                "gauge": str(r[c_gauge]).strip() if (c_gauge is not None and r[c_gauge] not in (None, "")) else None,
+                "keterangan": str(r[c_ket]).strip() if (c_ket is not None and r[c_ket] not in (None, "")) else None,
+                "aktif": True, "created_by": user["id"], "created_at": now,
+            })
+            item_baru += 1
+
+        # stok awal (transaksi masuk) — idempoten via import_key (aman diimpor ulang)
+        if qty > 0:
+            import_key = f"{body.tipe}|{nama}|{sediaan}|{exp}|{qty}"
+            dup = await db.stok_transaksi.find_one({"import_key": import_key}, {"_id": 0, "id": 1})
+            if dup:
+                tx_lewati += 1
+            else:
+                await db.stok_transaksi.insert_one({
+                    "id": uuid.uuid4().hex, "item_id": item_id, "item_nama": nama, "satuan": satuan,
+                    "jenis": "masuk", "mutasi": qty, "tgl": now.date().isoformat(),
+                    "batch": None, "exp": exp, "sumber": "stok awal", "catatan": "impor Excel",
+                    "import_key": import_key, "petugas_id": user["id"], "created_at": now,
+                })
+                tx_baru += 1
+                contoh.append({"nama": nama, "qty": _rapikan(qty), "exp": exp})
+    return {"ok": True, "tipe": body.tipe, "item_baru": item_baru, "item_reuse": item_reuse,
+            "stok_awal_dibuat": tx_baru, "stok_awal_dilewati": tx_lewati, "contoh": contoh[:5]}
