@@ -79,6 +79,49 @@ def _rapikan(x):
         return x
 
 
+async def potong_stok_pelayanan(db, pelayanan_id, tgl, obat_list, user):
+    """Potong stok dari obat yang dipakai di pelayanan (best-effort, non-blocking).
+    Hanya memotong bila item stok obat cocok (via obat_id atau nama) DAN satuan sama.
+    Selain itu dicatat sebagai 'dilewati' agar transparan (mis. satuan beda ml vs Botol)."""
+    dipotong, dilewati = [], []
+    now = datetime.now(timezone.utc)
+    for o in obat_list or []:
+        try:
+            jml = float(o.get("jumlah") or 0)
+        except (TypeError, ValueError):
+            jml = 0
+        if jml <= 0:
+            continue
+        nama = o.get("nama")
+        item = None
+        if o.get("obat_id"):
+            item = await db.stok_item.find_one({"tipe": "obat", "obat_id": o["obat_id"]}, {"_id": 0})
+        if not item and nama:
+            item = await db.stok_item.find_one({"tipe": "obat", "nama": nama}, {"_id": 0})
+        if not item:
+            dilewati.append({"nama": nama, "alasan": "item stok tidak ada"})
+            continue
+        su_item = (item.get("satuan") or "").strip().lower()
+        su_pakai = (o.get("satuan") or "").strip().lower()
+        if su_pakai and su_item and su_pakai != su_item:
+            dilewati.append({"nama": nama, "alasan": f"satuan beda ({o.get('satuan')} vs {item.get('satuan')})"})
+            continue
+        await db.stok_transaksi.insert_one({
+            "id": uuid.uuid4().hex, "item_id": item["id"], "item_nama": item["nama"], "satuan": item.get("satuan"),
+            "jenis": "keluar", "mutasi": -jml, "tgl": tgl or now.date().isoformat(),
+            "batch": None, "exp": None, "sumber": "pelayanan", "catatan": "pemakaian pelayanan",
+            "ref_pelayanan": pelayanan_id, "petugas_id": user.get("id"), "created_at": now,
+        })
+        dipotong.append({"nama": item["nama"], "jumlah": _rapikan(jml), "satuan": item.get("satuan")})
+    return {"dipotong": dipotong, "dilewati": dilewati}
+
+
+async def kembalikan_stok_pelayanan(db, pelayanan_id):
+    """Hapus transaksi keluar yang berasal dari pelayanan (dipakai saat pelayanan dihapus)."""
+    r = await db.stok_transaksi.delete_many({"ref_pelayanan": pelayanan_id})
+    return r.deleted_count
+
+
 # --------------------------------------------------------------- ITEM
 @router.get("/item")
 async def list_item(
