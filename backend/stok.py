@@ -260,20 +260,156 @@ async def delete_transaksi(tid: str, _user=Depends(require_roles("admin"))):
 
 
 # --------------------------------------------------------------- KEDALUWARSA
+async def _mendekati_ed(db, hari=90):
+    batas = (date.today() + timedelta(days=hari)).isoformat()
+    hari_ini = date.today().isoformat()
+    rows = await db.stok_transaksi.find(
+        {"jenis": "masuk", "exp": {"$ne": None, "$lte": batas}}, {"_id": 0}
+    ).sort("exp", 1).to_list(500)
+    for r in rows:
+        r["kedaluwarsa"] = bool(r.get("exp") and r["exp"] < hari_ini)
+    return rows
+
+
 @router.get("/kedaluwarsa")
 async def mendekati_kedaluwarsa(
     hari: int = Query(90, ge=1, le=730),
     _user=Depends(require_roles("petugas", "admin")),
 ):
     """Penerimaan (masuk) dengan tanggal ED dalam `hari` ke depan (info; belum FEFO)."""
-    batas = (date.today() + timedelta(days=hari)).isoformat()
-    hari_ini = date.today().isoformat()
-    rows = await get_db().stok_transaksi.find(
-        {"jenis": "masuk", "exp": {"$ne": None, "$lte": batas}}, {"_id": 0}
-    ).sort("exp", 1).to_list(500)
-    for r in rows:
-        r["kedaluwarsa"] = bool(r.get("exp") and r["exp"] < hari_ini)
-    return rows
+    return await _mendekati_ed(get_db(), hari)
+
+
+# --------------------------------------------------------------- LAPORAN
+def _rekap_periode_map(txs):
+    masuk, keluar, sesuai = defaultdict(float), defaultdict(float), defaultdict(float)
+    for t in txs:
+        j = t.get("jenis")
+        m = t.get("mutasi", 0) or 0
+        if j == "masuk":
+            masuk[t["item_id"]] += m
+        elif j == "keluar":
+            keluar[t["item_id"]] += -m
+        elif j == "penyesuaian":
+            sesuai[t["item_id"]] += m
+    return masuk, keluar, sesuai
+
+
+async def _laporan_data(db, tahun=None, bulan=None, hari_ed=90):
+    items = await db.stok_item.find({}, {"_id": 0}).sort("nama", 1).to_list(2000)
+    saldo = await _saldo_map(db)
+    rekap_masuk = rekap_keluar = rekap_sesuai = {}
+    periode = None
+    if tahun and bulan:
+        s_dari = f"{tahun:04d}-{bulan:02d}-01"
+        s_sampai = f"{tahun:04d}-{bulan + 1:02d}-01" if bulan < 12 else f"{tahun + 1:04d}-01-01"
+        txs = await db.stok_transaksi.find({"tgl": {"$gte": s_dari, "$lt": s_sampai}}, {"_id": 0}).to_list(100000)
+        rekap_masuk, rekap_keluar, rekap_sesuai = _rekap_periode_map(txs)
+        periode = {"tahun": tahun, "bulan": bulan}
+    daftar = []
+    n_menipis = 0
+    for it in items:
+        s = saldo.get(it["id"], 0)
+        rendah = it.get("stok_minimum") is not None and s <= it["stok_minimum"]
+        if rendah:
+            n_menipis += 1
+        daftar.append({
+            "id": it["id"], "tipe": it["tipe"], "nama": it["nama"], "satuan": it.get("satuan"),
+            "produsen": it.get("produsen"), "kategori": it.get("kategori"), "sediaan": it.get("sediaan"),
+            "saldo": _rapikan(s), "stok_minimum": it.get("stok_minimum"), "stok_rendah": rendah,
+            "masuk": _rapikan(rekap_masuk.get(it["id"], 0)) if periode else None,
+            "keluar": _rapikan(rekap_keluar.get(it["id"], 0)) if periode else None,
+            "penyesuaian": _rapikan(rekap_sesuai.get(it["id"], 0)) if periode else None,
+        })
+    ed = await _mendekati_ed(db, hari_ed)
+    return {
+        "periode": periode,
+        "ringkas": {"item": len(items), "menipis": n_menipis, "mendekati_ed": len(ed)},
+        "saldo": daftar,
+        "mendekati_ed": ed,
+    }
+
+
+@router.get("/laporan")
+async def laporan_stok(
+    tahun: Optional[int] = None, bulan: Optional[int] = None, hari_ed: int = 90,
+    _user=Depends(require_roles("petugas", "admin")),
+):
+    return await _laporan_data(get_db(), tahun, bulan, hari_ed)
+
+
+@router.get("/laporan/xlsx")
+async def laporan_stok_xlsx(
+    tahun: Optional[int] = None, bulan: Optional[int] = None, hari_ed: int = 90,
+    _user=Depends(require_roles("petugas", "admin")),
+):
+    from fastapi.responses import Response
+    data = await _laporan_data(get_db(), tahun, bulan, hari_ed)
+    blob = _build_stok_xlsx(data)
+    fname = "laporan-stok"
+    if data["periode"]:
+        fname += f"-{data['periode']['tahun']:04d}-{data['periode']['bulan']:02d}"
+    return Response(
+        content=blob,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{fname}.xlsx"'},
+    )
+
+
+def _build_stok_xlsx(data):
+    import io
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill
+
+    HDR_FONT = Font(bold=True, color="FFFFFF")
+    HDR_FILL = PatternFill("solid", fgColor="0F6E56")
+    TITLE = Font(bold=True, size=14)
+
+    def hdr(ws, row, cols):
+        for j, c in enumerate(cols, start=1):
+            cell = ws.cell(row=row, column=j, value=c)
+            cell.font = HDR_FONT
+            cell.fill = HDR_FILL
+
+    def autow(ws):
+        for col in ws.columns:
+            w = max((len(str(c.value)) for c in col if c.value is not None), default=8)
+            ws.column_dimensions[col[0].column_letter].width = min(max(w + 2, 10), 45)
+
+    periode = data.get("periode")
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Saldo"
+    ws["A1"] = "LAPORAN STOK" + (f" — {periode['bulan']:02d}/{periode['tahun']}" if periode else "")
+    ws["A1"].font = TITLE
+    kolom = ["Tipe", "Nama", "Produsen", "Kategori", "Sediaan", "Satuan", "Saldo", "Min", "Status"]
+    if periode:
+        kolom += ["Masuk", "Keluar", "Penyesuaian"]
+    hdr(ws, 3, kolom)
+    r = 4
+    for it in data["saldo"]:
+        row = [it["tipe"], it["nama"], it.get("produsen"), it.get("kategori"), it.get("sediaan"),
+               it.get("satuan"), it["saldo"], it.get("stok_minimum"), "menipis" if it["stok_rendah"] else ""]
+        if periode:
+            row += [it.get("masuk"), it.get("keluar"), it.get("penyesuaian")]
+        for j, v in enumerate(row, start=1):
+            ws.cell(row=r, column=j, value=v)
+        r += 1
+    autow(ws)
+
+    ws2 = wb.create_sheet("Mendekati ED")
+    hdr(ws2, 1, ["Item", "Satuan", "Jumlah masuk", "Tgl ED", "Status"])
+    for i, e in enumerate(data["mendekati_ed"], start=2):
+        ws2.cell(row=i, column=1, value=e.get("item_nama"))
+        ws2.cell(row=i, column=2, value=e.get("satuan"))
+        ws2.cell(row=i, column=3, value=_rapikan(e.get("mutasi", 0)))
+        ws2.cell(row=i, column=4, value=e.get("exp"))
+        ws2.cell(row=i, column=5, value="LEWAT ED" if e.get("kedaluwarsa") else "mendekati")
+    autow(ws2)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    return buf.getvalue()
 
 
 # --------------------------------------------------------------- OPNAME
