@@ -26,6 +26,7 @@ import notifikasi
 import pendaftaran as pendaftaran_mod
 from wa_petugas import cari_petugas_by_no
 from wa_alur_petugas import proses_petugas
+from interaction_log import catat_interaksi
 
 router = APIRouter(prefix="/wa", tags=["wa"])
 
@@ -215,6 +216,16 @@ async def terima(request: Request):
                 balasan = await _proses(db, wa_id, nama_profil, teks)
         except Exception:
             balasan = f"Maaf, terjadi kendala. Coba lagi atau hubungi {KONTAK}."
+
+    # Catat interaksi (gagal-diam; tak memblokir balasan)
+    try:
+        peran = "petugas" if await cari_petugas_by_no(db, wa_id) else "warga"
+    except Exception:
+        peran = "warga"
+    await catat_interaksi(
+        db, wa_id=wa_id, nama=nama_profil, peran=peran,
+        teks_masuk=teks, balasan=balasan,
+    )
 
     if balasan:
         await notifikasi.kirim_teks_wa(wa_id, balasan)
