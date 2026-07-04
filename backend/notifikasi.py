@@ -26,6 +26,8 @@ import urllib.parse
 import urllib.request
 import urllib.error
 
+from wa_util import siapkan_untuk_wa
+
 
 def normalisasi_no(no) -> str | None:
     """08xx / 62xx / +62 → 62xxxxxxxxxx (hanya digit)."""
@@ -127,16 +129,10 @@ async def _kirim_fonnte(no, nama, jenis):
         return {"status": "gagal", "error": str(e)[:200]}
 
 
-async def kirim_teks_wa(no, teks):
-    """Kirim teks BEBAS via Cloud API (hanya valid dalam jendela 24 jam — untuk
-    balasan alur inbound, di mana pengguna sudah chat duluan, jadi GRATIS).
+async def _kirim_satu(no, teks):
+    """Kirim SATU pesan teks (no sudah dinormalisasi, provider sudah dicek bukan 'none').
     Mengembalikan dict status, tak melempar."""
     provider = (os.getenv("WA_PROVIDER") or "none").lower()
-    if provider == "none":
-        return {"status": "off"}
-    no = normalisasi_no(no)
-    if not no:
-        return {"status": "skip", "alasan": "no HP tidak valid"}
     if provider == "fonnte":
         token = os.getenv("WA_FONNTE_TOKEN")
         if not token:
@@ -156,7 +152,7 @@ async def kirim_teks_wa(no, teks):
         return {"status": "skip", "alasan": "kredensial cloud kosong"}
     ver = os.getenv("WA_API_VERSION", "v21.0")
     url = f"https://graph.facebook.com/{ver}/{phone_id}/messages"
-    payload = {"messaging_product": "whatsapp", "to": no, "type": "text", "text": {"body": teks[:4000]}}
+    payload = {"messaging_product": "whatsapp", "to": no, "type": "text", "text": {"body": teks}}
     headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
     try:
         status, body = await asyncio.to_thread(_post_json, url, headers, payload)
@@ -170,7 +166,33 @@ async def kirim_teks_wa(no, teks):
     except Exception as e:
         return {"status": "gagal", "error": str(e)[:200]}
 
-    """jenis: 'konfirmasi' | 'tolak'. Selalu mengembalikan dict status, tak melempar."""
+
+async def kirim_teks_wa(no, teks):
+    """Kirim teks BEBAS via provider aktif (valid dalam jendela 24 jam — balasan
+    alur inbound, GRATIS). Pesan panjang otomatis dinormalisasi (markdown WhatsApp)
+    lalu dipecah jadi beberapa bagian. Mengembalikan dict status, tak melempar."""
+    provider = (os.getenv("WA_PROVIDER") or "none").lower()
+    if provider == "none":
+        return {"status": "off"}
+    no = normalisasi_no(no)
+    if not no:
+        return {"status": "skip", "alasan": "no HP tidak valid"}
+    bagian = siapkan_untuk_wa(teks or "")
+    hasil = []
+    for bg in bagian:
+        if not bg:
+            continue
+        r = await _kirim_satu(no, bg)
+        hasil.append(r)
+        if r.get("status") == "gagal":
+            break
+    return {"status": hasil[-1]["status"] if hasil else "skip", "bagian": len(hasil), "detail": hasil}
+
+
+async def kirim_notif_pendaftaran(kontak, nama, jenis):
+    """Kirim notifikasi status pendaftaran ke peternak.
+    jenis: 'konfirmasi' | 'tolak'. Selalu mengembalikan dict status, tak melempar.
+    (Sebelumnya badan fungsi ini kehilangan baris def-nya — dipulihkan.)"""
     provider = (os.getenv("WA_PROVIDER") or "none").lower()
     if provider == "none":
         return {"status": "off"}
