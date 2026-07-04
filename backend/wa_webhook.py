@@ -27,6 +27,10 @@ import pendaftaran as pendaftaran_mod
 from wa_petugas import cari_petugas_by_no
 from wa_alur_petugas import proses_petugas
 from interaction_log import catat_interaksi
+from wa_konsultasi import (
+    jawab_konsultasi, format_balasan_konsultasi,
+    MENU_UTAMA, TEKS_MULAI_KONSULTASI, TEKS_INFO,
+)
 
 router = APIRouter(prefix="/wa", tags=["wa"])
 
@@ -87,11 +91,11 @@ async def _cocokkan_kalurahan(db, teks):
 
 
 async def _proses(db, wa_id, nama_profil, teks):
-    """State machine sederhana. Mengembalikan teks balasan."""
+    """State machine: menu -> (konsultasi | pendaftaran | info). Mengembalikan teks balasan."""
     low = (teks or "").lower().strip()
     sesi = await db.wa_sesi.find_one({"wa_id": wa_id}, {"_id": 0})
 
-    # kedaluwarsa → reset
+    # kedaluwarsa -> reset
     if sesi:
         ts = sesi.get("updated_at")
         if isinstance(ts, datetime):
@@ -110,21 +114,55 @@ async def _proses(db, wa_id, nama_profil, teks):
     async def hapus():
         await db.wa_sesi.delete_one({"wa_id": wa_id})
 
+    def _mulai_daftar():
+        return ("Baik, kita daftarkan Anda untuk layanan Puskeswan Godean. 🐾\n"
+                "Siapa *nama lengkap* Anda?\n_(ketik *batal* untuk berhenti)_")
+
     # batal kapan saja
     if low in ("batal", "cancel", "stop"):
         await hapus()
-        return "Pendaftaran dibatalkan. Ketik *daftar* untuk mulai lagi."
+        return "Baik, sesi diakhiri. Kirim pesan apa saja untuk membuka *menu* lagi. Terima kasih."
 
-    # mulai / belum ada sesi
+    # kembali ke menu kapan saja
+    if low in ("menu", "0"):
+        await simpan("menu", (sesi or {}).get("data") or {})
+        return MENU_UTAMA
+
+    # belum ada sesi -> tampilkan MENU (bukan langsung pendaftaran)
     if not sesi:
-        await simpan("nama", {})
-        return ("Selamat datang di pendaftaran *Puskeswan Godean*. 🐾\n"
-                "Kami akan mencatat data Anda (akan diverifikasi petugas).\n\n"
-                "Siapa *nama lengkap* Anda?\n_(ketik *batal* untuk berhenti)_")
+        await simpan("menu", {})
+        return MENU_UTAMA
 
     step = sesi.get("step")
     data = sesi.get("data") or {}
 
+    # jalan pintas "daftar" dari mana saja (kecuali sedang di tengah pendaftaran)
+    if low in ("daftar", "pendaftaran") and step not in ("nama", "wilayah", "ternak"):
+        await simpan("nama", data)
+        return _mulai_daftar()
+
+    # ---------- MENU ----------
+    if step == "menu":
+        if low in ("1", "konsultasi", "konsul", "tanya"):
+            await simpan("konsultasi", data)
+            return TEKS_MULAI_KONSULTASI
+        if low in ("2", "daftar", "pendaftaran"):
+            await simpan("nama", data)
+            return _mulai_daftar()
+        if low in ("3", "info", "jadwal", "alamat"):
+            return TEKS_INFO + "\n\n" + MENU_UTAMA
+        return "Mohon balas dengan *angka* 1, 2, atau 3.\n\n" + MENU_UTAMA
+
+    # ---------- KONSULTASI ----------
+    if step == "konsultasi":
+        hasil = await jawab_konsultasi(teks)
+        balasan = format_balasan_konsultasi(hasil)
+        if hasil.get("perlu_pendaftaran"):
+            data["keluhan_konsultasi"] = hasil.get("ringkas_keluhan") or teks[:200]
+        await simpan("konsultasi", data)
+        return balasan
+
+    # ---------- PENDAFTARAN ----------
     if step == "nama":
         if not teks:
             return "Mohon ketik nama lengkap Anda."
@@ -135,11 +173,11 @@ async def _proses(db, wa_id, nama_profil, teks):
                 "Sidoagung, Sidokarto, Sidorejo, Sidomoyo).")
 
     if step == "wilayah":
-        w = await _cocokkan_kalurahan(db, teks)
-        if w:
-            data["kalurahan_id"] = w["id"]
-            data["kapanewon_id"] = w.get("parent_id")
-            data["wilayah_nama"] = w["nama"]
+        w2 = await _cocokkan_kalurahan(db, teks)
+        if w2:
+            data["kalurahan_id"] = w2["id"]
+            data["kapanewon_id"] = w2.get("parent_id")
+            data["wilayah_nama"] = w2["nama"]
         else:
             data["wilayah_teks"] = teks[:80]
         await simpan("ternak", data)
@@ -149,10 +187,12 @@ async def _proses(db, wa_id, nama_profil, teks):
 
     if step == "ternak":
         data["ternak_teks"] = teks[:300]
-        # buat pendaftaran (reuse pintu publik) — status 'baru', sumber 'wa'
         catatan = f"[via WhatsApp] Ternak: {data.get('ternak_teks', '-')}"
         if data.get("wilayah_teks"):
             catatan += f" | Wilayah (teks): {data['wilayah_teks']}"
+        if data.get("keluhan_konsultasi"):
+            catatan += f" | Keluhan (konsultasi): {data['keluhan_konsultasi']}"
+        sumber = "wa_konsultasi" if data.get("keluhan_konsultasi") else "wa"
         try:
             await pendaftaran_mod.buat_pendaftaran(pendaftaran_mod.PendaftaranIn(
                 nama=data.get("nama") or nama_profil or "(tanpa nama)",
@@ -160,7 +200,7 @@ async def _proses(db, wa_id, nama_profil, teks):
                 kapanewon_id=data.get("kapanewon_id"),
                 kalurahan_id=data.get("kalurahan_id"),
                 catatan=catatan,
-                sumber="wa",
+                sumber=sumber,
             ))
         except Exception:
             await hapus()
@@ -170,9 +210,9 @@ async def _proses(db, wa_id, nama_profil, teks):
         return ("✅ *Pendaftaran Anda terkirim* dan menunggu verifikasi petugas Puskeswan Godean.\n"
                 f"Jika ada pertanyaan, hubungi {KONTAK}. Terima kasih!")
 
-    # step tak dikenal → reset
-    await hapus()
-    return "Ketik *daftar* untuk memulai pendaftaran."
+    # step tak dikenal -> kembali ke menu
+    await simpan("menu", {})
+    return MENU_UTAMA
 
 
 @router.post("/webhook")
