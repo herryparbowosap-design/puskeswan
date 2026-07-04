@@ -68,6 +68,15 @@ def deteksi_dugaan_phms(teks: str) -> list[str]:
     for penyakit, kunci in GEJALA_PHMS.items():
         if any(k in low for k in kunci):
             hit.append(penyakit)
+    # Pola proksimitas "mati mendadak" + jenis hewan — menangkap urutan kata alami
+    # (mis. "ayam saya mati mendadak") yang lolos dari pencocokan frasa eksak.
+    if ("mati mendadak" in low) or ("mati" in low and "mendadak" in low):
+        if any(h in low for h in ("ayam", "unggas", "itik", "bebek", "puyuh", "burung")) and "AI" not in hit:
+            hit.append("AI")
+        if "babi" in low and "ASF" not in hit:
+            hit.append("ASF")
+        if any(h in low for h in ("sapi", "kerbau", "kambing", "domba", "ternak")) and "Antraks" not in hit:
+            hit.append("Antraks")
     return hit
 
 
