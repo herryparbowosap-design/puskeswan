@@ -27,6 +27,7 @@ import kegiatan
 import stok
 import wa_petugas
 import wa_webhook
+import interaction_log
 from auth import router as auth_router, admin_router
 
 
@@ -40,6 +41,7 @@ async def ensure_indexes(db):
     await db.pelayanan.create_index("peternak.wilayah_id")
     await db.wilayah.create_index([("level", 1), ("parent_id", 1)])
     await db.penyakit.create_index("kategori")
+    await interaction_log.ensure_indexes_log(db)
 
 
 @asynccontextmanager
@@ -95,3 +97,4 @@ app.include_router(kegiatan.router, prefix="/api")
 app.include_router(stok.router, prefix="/api")
 app.include_router(wa_petugas.router, prefix="/api")
 app.include_router(wa_webhook.router, prefix="/api")
+app.include_router(interaction_log.router, prefix="/api")
