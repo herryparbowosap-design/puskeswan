@@ -1,6 +1,8 @@
 """Autentikasi + RBAC. Semua route di bawah /api (prefix ditambah di server)."""
 import os
+import uuid
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -40,6 +42,7 @@ class UserOut(BaseModel):
     id: str
     nama: str
     roles: list[str]
+    peternak_id: Optional[str] = None
 
 
 class TokenOut(BaseModel):
@@ -85,13 +88,15 @@ async def login(body: LoginInput):
     token = create_token(user["username"], user.get("roles", []))
     return TokenOut(
         access_token=token,
-        user=UserOut(id=user["id"], nama=user["nama"], roles=user.get("roles", [])),
+        user=UserOut(id=user["id"], nama=user["nama"], roles=user.get("roles", []),
+                     peternak_id=user.get("peternak_id")),
     )
 
 
 @router.get("/me", response_model=UserOut)
 async def me(user: dict = Depends(current_user)):
-    return UserOut(id=user["id"], nama=user["nama"], roles=user.get("roles", []))
+    return UserOut(id=user["id"], nama=user["nama"], roles=user.get("roles", []),
+                   peternak_id=user.get("peternak_id"))
 
 
 admin_router = APIRouter(prefix="/admin", tags=["admin"])
@@ -106,6 +111,49 @@ async def admin_ping(user: dict = Depends(require_roles("admin"))):
 async def list_users(_user: dict = Depends(require_roles("admin"))):
     """Daftar akun (admin only) — untuk memilih petugas saat mendaftarkan nomor WA."""
     rows = await get_db().users.find(
-        {}, {"_id": 0, "id": 1, "nama": 1, "username": 1, "roles": 1, "aktif": 1}
+        {}, {"_id": 0, "id": 1, "nama": 1, "username": 1, "roles": 1, "aktif": 1, "peternak_id": 1}
     ).to_list(500)
     return rows
+
+
+class AkunPeternakIn(BaseModel):
+    username: str
+    password: str
+
+
+@admin_router.post("/peternak/{pid}/akun")
+async def buat_akun_peternak(
+    pid: str, body: AkunPeternakIn, _user: dict = Depends(require_roles("admin"))
+):
+    """Provision akun login (role 'peternak') dan tautkan ke record peternak `pid`.
+
+    Aman & idempoten-guard: peternak wajib ada, belum punya akun tertaut, dan
+    username belum dipakai. Password disimpan sebagai hash (tak pernah plaintext).
+    """
+    db = get_db()
+    username = body.username.strip().lower()
+    if not username or len(body.password) < 6:
+        raise HTTPException(400, "username wajib & password minimal 6 karakter")
+
+    p = await db.peternak.find_one({"id": pid}, {"_id": 0, "id": 1, "nama": 1})
+    if not p:
+        raise HTTPException(404, "peternak tidak ditemukan")
+
+    if await db.users.find_one({"peternak_id": pid}):
+        raise HTTPException(409, "peternak ini sudah punya akun tertaut")
+    if await db.users.find_one({"username": username}):
+        raise HTTPException(409, "username sudah dipakai")
+
+    doc = {
+        "id": uuid.uuid4().hex,
+        "nama": p.get("nama") or username,
+        "username": username,
+        "password_hash": hash_password(body.password),
+        "roles": ["peternak"],
+        "peternak_id": pid,
+        "aktif": True,
+        "created_at": datetime.now(timezone.utc),
+    }
+    await db.users.insert_one(doc)
+    return {"id": doc["id"], "username": username, "nama": doc["nama"],
+            "roles": doc["roles"], "peternak_id": pid}
