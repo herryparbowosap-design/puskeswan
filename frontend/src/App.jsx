@@ -1054,6 +1054,53 @@ function AISusunTernak({ peternakId, onCreated, onClose }) {
   );
 }
 
+function BuatAkunPeternak({ peternak }) {
+  const [open, setOpen] = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);   // {ok, text}
+
+  async function buat() {
+    if (!username.trim() || password.length < 6) {
+      setMsg({ ok: false, text: "Username wajib & password minimal 6 karakter." }); return;
+    }
+    setBusy(true); setMsg(null);
+    try {
+      const r = await jpost(`/admin/peternak/${peternak.id}/akun`, { username: username.trim(), password });
+      setMsg({ ok: true, text: `Akun dibuat. Username: ${r.username}` });
+      setUsername(""); setPassword("");
+    } catch (e) {
+      setMsg({ ok: false, text: e.message || String(e) });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!open) {
+    return <button style={btnGhost} onClick={() => setOpen(true)}>Buat akun login peternak</button>;
+  }
+  return (
+    <div style={{ ...card, display: "grid", gap: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <strong>Buat akun login untuk {peternak.nama}</strong>
+        <button style={btnGhost} onClick={() => setOpen(false)}>Tutup</button>
+      </div>
+      <div style={{ fontSize: 13, color: "#666" }}>
+        Peternak memakai username & password ini untuk masuk dan melihat data ternak serta riwayat pelayanannya.
+      </div>
+      <input style={inp} placeholder="Username (mis. no. HP atau nama)" value={username}
+        onChange={(e) => setUsername(e.target.value)} autoCapitalize="none" />
+      <input style={inp} type="password" placeholder="Password (min. 6 karakter)" value={password}
+        onChange={(e) => setPassword(e.target.value)} />
+      {msg && <div style={{ fontSize: 13, color: msg.ok ? "#0f6e56" : "#c00" }}>{msg.text}</div>}
+      <button style={{ ...btn, opacity: busy ? 0.6 : 1 }} disabled={busy} onClick={buat}>
+        {busy ? "Menyimpan…" : "Buat akun"}
+      </button>
+    </div>
+  );
+}
+
 function PeternakDetail({ peternak, isAdmin, onBack, onUpdated }) {
   const [showForm, setShowForm] = useState(false);
   const [showAI, setShowAI] = useState(false);
@@ -1117,6 +1164,8 @@ function PeternakDetail({ peternak, isAdmin, onBack, onUpdated }) {
           </div>
         </div>
       </div>
+
+      {isAdmin && <BuatAkunPeternak peternak={pet} />}
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
         <strong>Ternak</strong>
@@ -2776,6 +2825,174 @@ function StokPage({ isAdmin }) {
   );
 }
 
+function MintaKunjungan({ profil, onDone, onCancel }) {
+  const [keluhan, setKeluhan] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function kirim() {
+    if (!keluhan.trim()) { setErr("Ceritakan dulu keperluannya."); return; }
+    setBusy(true); setErr("");
+    try {
+      await jpost("/pendaftaran", {
+        nama: profil.nama, kontak: profil.kontak, nik: profil.nik || null,
+        kapanewon_id: profil.kapanewon_id || null, kalurahan_id: profil.kalurahan_id || null,
+        padukuhan_id: profil.padukuhan_id || null, alamat_detail: profil.alamat_detail || null,
+        catatan: keluhan.trim(), sumber: "beranda-peternak",
+      });
+      onDone();
+    } catch (e) {
+      setErr(e.message || String(e)); setBusy(false);
+    }
+  }
+
+  return (
+    <div style={{ ...card, display: "grid", gap: 10 }}>
+      <strong>Minta kunjungan petugas</strong>
+      <div style={{ fontSize: 13, color: "#666" }}>
+        Ceritakan keluhan atau kebutuhan Anda. Petugas Puskeswan akan menindaklanjuti.
+      </div>
+      <textarea style={{ ...inp, minHeight: 90, resize: "vertical" }}
+        placeholder="Mis. sapi tidak mau makan 2 hari, atau minta vaksinasi rutin"
+        value={keluhan} onChange={(e) => setKeluhan(e.target.value)} />
+      {err && <div style={{ color: "#c00", fontSize: 13 }}>{err}</div>}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button style={{ ...btn, opacity: busy ? 0.6 : 1 }} disabled={busy} onClick={kirim}>
+          {busy ? "Mengirim…" : "Kirim permintaan"}
+        </button>
+        <button style={btnGhost} onClick={onCancel} disabled={busy}>Batal</button>
+      </div>
+    </div>
+  );
+}
+
+function BerandaPeternak({ user }) {
+  const [state, setState] = useState({ loading: true });
+  const [tab, setTab] = useState("ternak");
+  const [minta, setMinta] = useState(false);
+  const [key, setKey] = useState(0);
+
+  useEffect(() => {
+    let batal = false;
+    setState({ loading: true });
+    Promise.all([
+      jget("/saya/ringkasan"),
+      jget("/saya/profil"),
+      jget("/saya/ternak"),
+      jget("/saya/pelayanan"),
+      jget("/saya/pendaftaran"),
+    ]).then(([ringkasan, profil, ternak, pelayanan, pendaftaran]) => {
+      if (!batal) setState({ loading: false, ringkasan, profil, ternak, pelayanan, pendaftaran });
+    }).catch((e) => {
+      if (!batal) setState({ loading: false, error: e.message || String(e) });
+    });
+    return () => { batal = true; };
+  }, [key]);
+
+  if (state.loading) return <div style={{ color: "#888" }}>memuat…</div>;
+
+  // Akun belum ditautkan ke data peternak (backend balas 409) → arahkan, jangan buntu.
+  if (state.error) {
+    return (
+      <div style={{ ...card, display: "grid", gap: 8 }}>
+        <strong>Beranda belum bisa ditampilkan</strong>
+        <div style={{ color: "#666", fontSize: 14 }}>{state.error}</div>
+        <div style={{ color: "#666", fontSize: 13 }}>
+          Jika ini keliru, minta petugas Puskeswan menautkan akun Anda ke data peternak.
+        </div>
+      </div>
+    );
+  }
+
+  const { ringkasan: r, profil: p, ternak, pelayanan, pendaftaran } = state;
+  const refresh = () => setKey((k) => k + 1);
+
+  return (
+    <div style={{ display: "grid", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+        <StatBox label="Ternak" val={r.jumlah_ternak} />
+        <StatBox label="Pelayanan" val={r.jumlah_pelayanan} />
+        <StatBox label="Menunggu" val={r.pendaftaran_menunggu} />
+      </div>
+
+      <div style={{ ...card, display: "grid", gap: 4 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 }}>
+          <div>
+            <div style={{ fontWeight: 600 }}>{p.nama}</div>
+            <div style={{ fontSize: 13, color: "#666" }}>{p.kontak}{p.nik ? ` · NIK ${p.nik}` : ""}</div>
+            {p.alamat_detail && <div style={{ fontSize: 13, color: "#666" }}>{p.alamat_detail}</div>}
+          </div>
+          {!minta && <button style={btn} onClick={() => setMinta(true)}>Minta kunjungan</button>}
+        </div>
+      </div>
+
+      {minta && <MintaKunjungan profil={p}
+        onCancel={() => setMinta(false)}
+        onDone={() => { setMinta(false); refresh(); }} />}
+
+      {pendaftaran.length > 0 && (
+        <div style={{ ...card, display: "grid", gap: 8, background: "#f6fbf9", borderColor: "#cfe6de" }}>
+          <strong>Permintaan sedang diproses</strong>
+          {pendaftaran.map((x) => (
+            <div key={x.id} style={{ fontSize: 14, display: "flex", justifyContent: "space-between", gap: 8 }}>
+              <span>{x.catatan || KATEGORI_LABEL[x.jenis_layanan] || x.jenis_layanan || "Permintaan kunjungan"}</span>
+              <span style={{ color: "#b58100", fontSize: 12, whiteSpace: "nowrap" }}>
+                {x.status === "baru" ? "menunggu verifikasi" : "sedang diverifikasi"}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 8 }}>
+        <button style={tab === "ternak" ? btn : btnGhost} onClick={() => setTab("ternak")}>Ternak saya</button>
+        <button style={tab === "pelayanan" ? btn : btnGhost} onClick={() => setTab("pelayanan")}>Riwayat pelayanan</button>
+      </div>
+
+      {tab === "ternak" && (
+        ternak.length === 0
+          ? <div style={{ color: "#888" }}>Belum ada ternak tercatat.</div>
+          : <div style={{ display: "grid", gap: 8 }}>
+              {ternak.map((t) => (
+                <div key={t.id} style={{ ...card, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontWeight: 500 }}>
+                      {t.spesies}{t.eartag ? ` · ${t.eartag}` : ""}
+                      {t.mode === "populasi" && t.jml_deklarasi ? ` · ${t.jml_deklarasi} ekor` : ""}
+                    </div>
+                    <div style={{ fontSize: 13, color: "#666" }}>
+                      {[t.jenis_kelamin, t.tgl_lahir ? hitungUmur(t.tgl_lahir) : null].filter(Boolean).join(" · ")}
+                    </div>
+                  </div>
+                  <span style={{ fontSize: 12, color: STATUS_COLOR[t.status] || "#666" }}>{t.status || "aktif"}</span>
+                </div>
+              ))}
+            </div>
+      )}
+
+      {tab === "pelayanan" && (
+        pelayanan.length === 0
+          ? <div style={{ color: "#888" }}>Belum ada riwayat pelayanan.</div>
+          : <div style={{ display: "grid", gap: 8 }}>
+              {pelayanan.map((s) => (
+                <div key={s.id} style={{ ...card }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
+                    <span style={{ fontWeight: 500 }}>{KATEGORI_LABEL[s.kategori] || s.kategori}</span>
+                    <span style={{ fontSize: 13, color: "#666" }}>{s.tgl}</span>
+                  </div>
+                  {(s.diagnosa_teks || s.tindakan || s.keterangan) && (
+                    <div style={{ fontSize: 13, color: "#666", marginTop: 4 }}>
+                      {[s.diagnosa_teks, s.tindakan, s.keterangan].filter(Boolean).join(" — ")}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+      )}
+    </div>
+  );
+}
+
 function Shell({ user, onLogout }) {
   const [role, setRole] = useState(user.roles.length === 1 ? user.roles[0] : null);
   const [tab, setTab] = useState("peternak");
@@ -2840,7 +3057,7 @@ function Shell({ user, onLogout }) {
           {tab === "wa" && role === "admin" && <WaPetugasPage />}
         </>
       ) : (
-        <div style={{ ...card, color: "#888" }}>Beranda peternak menyusul di slice berikutnya.</div>
+        <BerandaPeternak user={user} />
       )}
     </div>
   );
