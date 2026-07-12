@@ -62,11 +62,18 @@ class TransaksiIn(BaseModel):
 
 
 async def _saldo_map(db, item_ids=None):
-    flt = {"item_id": {"$in": item_ids}} if item_ids is not None else {}
-    txs = await db.stok_transaksi.find(flt, {"_id": 0, "item_id": 1, "mutasi": 1}).to_list(100000)
+    """Saldo (Σ mutasi) per item, dihitung di Mongo lewat $group — bukan ditarik
+    ke memori. `item_ids=None` = semua item; list kosong = tak ada (match nihil)."""
+    pipeline = []
+    if item_ids is not None:
+        pipeline.append({"$match": {"item_id": {"$in": item_ids}}})
+    pipeline.append({"$group": {
+        "_id": "$item_id",
+        "saldo": {"$sum": {"$ifNull": ["$mutasi", 0]}},
+    }})
     m = defaultdict(float)
-    for t in txs:
-        m[t["item_id"]] += t.get("mutasi", 0) or 0
+    async for row in db.stok_transaksi.aggregate(pipeline):
+        m[row["_id"]] = row.get("saldo", 0) or 0
     return m
 
 
@@ -281,17 +288,27 @@ async def mendekati_kedaluwarsa(
 
 
 # --------------------------------------------------------------- LAPORAN
-def _rekap_periode_map(txs):
+async def _rekap_periode_map(db, s_dari, s_sampai):
+    """Rekap masuk/keluar/penyesuaian per item untuk rentang tanggal, diagregasi
+    di Mongo. `keluar` dikembalikan sebagai magnitudo positif (konsisten dg versi lama)."""
     masuk, keluar, sesuai = defaultdict(float), defaultdict(float), defaultdict(float)
-    for t in txs:
-        j = t.get("jenis")
-        m = t.get("mutasi", 0) or 0
+    pipeline = [
+        {"$match": {"tgl": {"$gte": s_dari, "$lt": s_sampai}}},
+        {"$group": {
+            "_id": {"item_id": "$item_id", "jenis": "$jenis"},
+            "total": {"$sum": {"$ifNull": ["$mutasi", 0]}},
+        }},
+    ]
+    async for row in db.stok_transaksi.aggregate(pipeline):
+        iid = row["_id"].get("item_id")
+        j = row["_id"].get("jenis")
+        m = row.get("total", 0) or 0
         if j == "masuk":
-            masuk[t["item_id"]] += m
+            masuk[iid] += m
         elif j == "keluar":
-            keluar[t["item_id"]] += -m
+            keluar[iid] += -m
         elif j == "penyesuaian":
-            sesuai[t["item_id"]] += m
+            sesuai[iid] += m
     return masuk, keluar, sesuai
 
 
@@ -303,8 +320,7 @@ async def _laporan_data(db, tahun=None, bulan=None, hari_ed=90):
     if tahun and bulan:
         s_dari = f"{tahun:04d}-{bulan:02d}-01"
         s_sampai = f"{tahun:04d}-{bulan + 1:02d}-01" if bulan < 12 else f"{tahun + 1:04d}-01-01"
-        txs = await db.stok_transaksi.find({"tgl": {"$gte": s_dari, "$lt": s_sampai}}, {"_id": 0}).to_list(100000)
-        rekap_masuk, rekap_keluar, rekap_sesuai = _rekap_periode_map(txs)
+        rekap_masuk, rekap_keluar, rekap_sesuai = await _rekap_periode_map(db, s_dari, s_sampai)
         periode = {"tahun": tahun, "bulan": bulan}
     daftar = []
     n_menipis = 0
