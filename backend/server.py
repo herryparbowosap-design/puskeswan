@@ -28,11 +28,13 @@ import stok
 import wa_petugas
 import wa_webhook
 import interaction_log
+import saya
 from auth import router as auth_router, admin_router
 
 
 async def ensure_indexes(db):
     await db.users.create_index("username", unique=True)
+    await db.users.create_index("peternak_id", unique=True, sparse=True)
     await db.peternak.create_index([("nama", "text"), ("kontak", "text"), ("nik", "text")])
     await db.peternak.create_index([("koordinat", "2dsphere")])
     await db.ternak.create_index("peternak_id")
@@ -41,6 +43,8 @@ async def ensure_indexes(db):
     await db.pelayanan.create_index("peternak.wilayah_id")
     await db.wilayah.create_index([("level", 1), ("parent_id", 1)])
     await db.penyakit.create_index("kategori")
+    await db.stok_transaksi.create_index("item_id")
+    await db.stok_transaksi.create_index("tgl")
     await interaction_log.ensure_indexes_log(db)
 
 
@@ -98,3 +102,4 @@ app.include_router(stok.router, prefix="/api")
 app.include_router(wa_petugas.router, prefix="/api")
 app.include_router(wa_webhook.router, prefix="/api")
 app.include_router(interaction_log.router, prefix="/api")
+app.include_router(saya.router, prefix="/api")
